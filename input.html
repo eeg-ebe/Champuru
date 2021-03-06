@@ -52,21 +52,26 @@
                 <button onclick="calculate()">Calculate</button>
                 <button onclick="resetForm()">Reset form</button>
             </span>
-            <p><br><br></p>
-            <div class="noindent">
-                 To get a quick feeling of how Champuru works, use the following data:
-                 <button class="right" onclick="load(1)">Copy/Paste data to corresponding fields</button><br>
-                 Forward sequence: <span class="sequence" id="example1forward">ATSYKRMKY</span><br>
-                 Reverse sequence: <span class="sequence" id="example1reverse">WWKCTGAST</span><br>
+            <p><br></p>
+            <div id="resultArea" style="display: none">
             </div>
-            <br>
-            <div class="noindent">
-                 And here is a 'real-life' example (original chromatograms: <a href="ExampleForward.ab1">Forward</a> and <a href="ExampleReverse.ab1">Reverse</a>):
-                 <button class="right" onclick="load(2)">Copy/Paste data to corresponding fields</button><br>
-                 Forward sequence: <span class="sequence" id="example2forward">ATCGTGGGCGGCCGGCCCTGCCACAGACGGGGTTGTCACCCTCTGCGACGTGCCGTTCCAAGCAACTTAGGCAGGGCCCCTCCGCCTAGAAAGTGCTTCTCGCAACTACAACTCGCCGATGCAGGCATCGGAGATTTCAAATTTGAGCTCTTCCCGCTTCACTCGCCGTTACTGGGGGAATCCTTGTTAGTTTCTTTTCCTCCGCTTATTAATATGCTTAAATTCAGCGGGTAGCCTTGCCTGATCTGAGGTCTGGAAGGCGATTCCTTTTTTCCTTTGAGATGCCGCCACCGCTACCCGGCGGCAGCAGAAAAAAGAATCGAATGGAGAAAGATTTGTTCCGTCAAAGCGATAGAGCCGTGGCCGTTTGGGGTACATTGTTCTATGATCCCCGCGCGACACCGGATGTCGCTTGGCGGATCTTTCTCCCTGAATTTCAAGGGACGCGGTAAACCGACCGGTCGGGCCGAGCAGCACCAGGGCTGGCTAGCTAGCGCACGACCGGTCATCTCGACCGCGACCCTCAACGCCGCACGAACCCGTTCACGGCGGGCGCGYSYCSSSSCCMYMYSCKMYASASRSGGRSMMSRSGSRSRCGCGCRCRCGSRKWYKCRCRMKRKRKRTKTKWRWAKASACWCWSASASASAYRYKCYYSKGRGARMMCMMRAGMGCSMYWTKYGYKYWMARAKWYKMKRWKWYWCWSWRWWYTCYGCWWYTCACWCTWYWTMTCRSMMTCKMKCTGA</span><br>
-                 Reverse sequence: <span class="sequence" id="example2reverse">GTGCRMTMTCAACACMCSASTCTCGMRACRCATMKYGKGSGSSSSSSSCYSYSMCASASRSGGKKKTSWCMCYCTSYGMSRYGYSSYKYYMMRMRMMWYWKRSRSRGSSCCYCYSCSYMKARARWGYKYYTCKCRMMWMYAMMWCKCSSMKRYRSRSRYMKSRGAKWTYWMAWWTKWGMKCTYYYCSCKYYWCWCKCSSYKWYWSKGGGRRWMYYYKTKWKWKTYTYTTYYYCYSCKYWTWWWWATRYKYWWAWWYWSMGSGKRKMSYYKYSYSWKMTSWGRKSTSKRRRRSGMKWYYYYTTTTYYYYTKWGAKRYSSCSMCMSCKMYMCSSSGSSRSMRSARAAAARARWMKMRWRKRGARARAKWTKTKYYSYSWMARMGMKAKAGMSSYGKSSSYKTKKGGKRYAYWKTKYTMTRWKMYCCSCGCGMSACMSSRKRTSKCKYKKSGSRKMTYTYTCYCYSWRWWTYWMRRGRSRCGSKRWAMMSMSMSSKSKSGSSSMGMRSMRCMMSRGSKSKSKMKMKMKMGCRCRMSMSSKSWYMTCKMSMSCGMSMCYCWMMRCSSCRCRMRMMCSYKYWCRSSGSGSGCGCGTCCCGGCCCCATCCGCTACAGACGGGGACCAGGCGGACGCGCGCACGCGGATTCGCACGATGGATGTTTGAATAGACACTCAGACAGACATGCTCCTGGGAGAACCCAAGAGCGCCATTTGCGTTCAAAGATTCGATGATTCACTGAAT</span><br>
+            <p><br></p>
+            <div id="exampleSection">
+                <div class="noindent">
+                    To get a quick feeling of how Champuru works, use the following data:
+                    <button class="right" onclick="load(1)">Copy/Paste data to corresponding fields</button><br>
+                    Forward sequence: <span class="sequence" id="example1forward">ATSYKRMKY</span><br>
+                    Reverse sequence: <span class="sequence" id="example1reverse">WWKCTGAST</span><br>
+                </div>
+                <br>
+                <div class="noindent">
+                    And here is a 'real-life' example (original chromatograms: <a href="ExampleForward.ab1">Forward</a> and <a href="ExampleReverse.ab1">Reverse</a>):
+                    <button class="right" onclick="load(2)">Copy/Paste data to corresponding fields</button><br>
+                    Forward sequence: <span class="sequence" id="example2forward">ATCGTGGGCGGCCGGCCCTGCCACAGACGGGGTTGTCACCCTCTGCGACGTGCCGTTCCAAGCAACTTAGGCAGGGCCCCTCCGCCTAGAAAGTGCTTCTCGCAACTACAACTCGCCGATGCAGGCATCGGAGATTTCAAATTTGAGCTCTTCCCGCTTCACTCGCCGTTACTGGGGGAATCCTTGTTAGTTTCTTTTCCTCCGCTTATTAATATGCTTAAATTCAGCGGGTAGCCTTGCCTGATCTGAGGTCTGGAAGGCGATTCCTTTTTTCCTTTGAGATGCCGCCACCGCTACCCGGCGGCAGCAGAAAAAAGAATCGAATGGAGAAAGATTTGTTCCGTCAAAGCGATAGAGCCGTGGCCGTTTGGGGTACATTGTTCTATGATCCCCGCGCGACACCGGATGTCGCTTGGCGGATCTTTCTCCCTGAATTTCAAGGGACGCGGTAAACCGACCGGTCGGGCCGAGCAGCACCAGGGCTGGCTAGCTAGCGCACGACCGGTCATCTCGACCGCGACCCTCAACGCCGCACGAACCCGTTCACGGCGGGCGCGYSYCSSSSCCMYMYSCKMYASASRSGGRSMMSRSGSRSRCGCGCRCRCGSRKWYKCRCRMKRKRKRTKTKWRWAKASACWCWSASASASAYRYKCYYSKGRGARMMCMMRAGMGCSMYWTKYGYKYWMARAKWYKMKRWKWYWCWSWRWWYTCYGCWWYTCACWCTWYWTMTCRSMMTCKMKCTGA</span><br>
+                    Reverse sequence: <span class="sequence" id="example2reverse">GTGCRMTMTCAACACMCSASTCTCGMRACRCATMKYGKGSGSSSSSSSCYSYSMCASASRSGGKKKTSWCMCYCTSYGMSRYGYSSYKYYMMRMRMMWYWKRSRSRGSSCCYCYSCSYMKARARWGYKYYTCKCRMMWMYAMMWCKCSSMKRYRSRSRYMKSRGAKWTYWMAWWTKWGMKCTYYYCSCKYYWCWCKCSSYKWYWSKGGGRRWMYYYKTKWKWKTYTYTTYYYCYSCKYWTWWWWATRYKYWWAWWYWSMGSGKRKMSYYKYSYSWKMTSWGRKSTSKRRRRSGMKWYYYYTTTTYYYYTKWGAKRYSSCSMCMSCKMYMCSSSGSSRSMRSARAAAARARWMKMRWRKRGARARAKWTKTKYYSYSWMARMGMKAKAGMSSYGKSSSYKTKKGGKRYAYWKTKYTMTRWKMYCCSCGCGMSACMSSRKRTSKCKYKKSGSRKMTYTYTCYCYSWRWWTYWMRRGRSRCGSKRWAMMSMSMSSKSKSGSSSMGMRSMRCMMSRGSKSKSKMKMKMKMGCRCRMSMSSKSWYMTCKMSMSCGMSMCYCWMMRCSSCRCRMRMMCSYKYWCRSSGSGSGCGCGTCCCGGCCCCATCCGCTACAGACGGGGACCAGGCGGACGCGCGCACGCGGATTCGCACGATGGATGTTTGAATAGACACTCAGACAGACATGCTCCTGGGAGAACCCAAGAGCGCCATTTGCGTTCAAAGATTCGATGATTCACTGAAT</span><br>
+                </div>
+                <br>
             </div>
-            <br>
             <div class="navigation">
                 <a href="index.html">Back to startpage</a>
                 <a href="faq.html">FAQ</a>
@@ -84,6 +89,19 @@ var reverseLookup = {
 };
 
 function calculate() {
+    var resultArea = document.getElementById("resultArea");
+    resultArea.innerText = "Calculating ... Please wait ... Results will appear here!";
+    resultArea.style.display = "block";
+    document.getElementById('exampleSection').style.display = "none";
+
+    var worker = new Worker("champuru.js");
+    worker.addEventListener("message", function(e) {
+        data = e.data;
+        resultArea.innerHTML = data;
+    });
+    var fwd = document.getElementById('forward').value;
+    var rev = document.getElementById('reverse').value;
+    worker.postMessage({"fwd" : fwd, "rev" : rev});
 }
 
 function resetForm() {
