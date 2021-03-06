@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package champuru;
 
 #if js
 #end
@@ -26,11 +27,16 @@ class Champuru {
 
     #if js
     static var workerScope:js.html.DedicatedWorkerGlobalScope;
+
     public static function onMessage(e:js.html.MessageEvent):Void {
-        var fwd:String = cast(e.data.fwd, String);
-        var rev:String = cast(e.data.rev, String);
-        var result:String = "Hello World";
-        workerScope.postMessage(result);
+        try {
+            var fwd:String = cast(e.data.fwd, String);
+            var rev:String = cast(e.data.rev, String);
+            var result:String = "Hello World";
+            workerScope.postMessage(result);
+        } catch(e) {
+            workerScope.postMessage("The following error occurred: " + e);
+        }
     }
     #end
 
