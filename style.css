@@ -108,3 +108,16 @@ p {
     color: #434343;
     margin: 3px;
 }
+
+.sequence {
+    font-family: monospace, monospace;
+    word-break: break-all;
+}
+
+.noindent {
+    text-indent: 0;
+}
+
+.right {
+    float: right;
+}
