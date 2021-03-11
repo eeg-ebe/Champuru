@@ -126,6 +126,10 @@ function calculate() {
         alert("Missing reverse sequence input!");
         return;
     }
+    if (fwd.length + rev.length <= 3) {
+        alert("Sequences to short!");
+        return;
+    }
     var unknown1 = checkInput(fwd);
     if (unknown1 != null) {
         alert("Unknown base (" + unknown1 + ") in forward sequence!");
