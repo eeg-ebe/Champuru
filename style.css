@@ -121,3 +121,48 @@ p {
 .right {
     float: right;
 }
+
+fieldset {
+    background-color: #eeeeee;
+    padding: 7px;
+    padding-bottom: 25px;
+}
+legend {
+    background-color: gray;
+    color: white;
+    padding: 5px 10px;
+}
+
+.scoreTable {
+    margin: 0 auto;
+    background-color: white;
+    border-collapse: collapse;
+    border: 1px solid black;
+}
+.scoreTable .header {
+    background-color: #ddd;
+}
+.scoreTable td {
+    padding: 2px 6px;
+    text-align: right;
+    border: 0px solid #000;
+}
+.scoreTable .odd:hover {
+    background-color: yellow;
+}
+.scoreTable .even:hover {
+    background-color: yellow;
+}
+.scoreTable .even {
+    background-color: #eee;
+}
+.scoreTable .odd {
+    background-color: #white;
+}
+.center {
+    margin: 0 auto !important;
+}
+.bgred {
+    font-family: monospace, monospace;
+    background-color: red;
+}
