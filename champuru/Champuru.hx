@@ -79,8 +79,8 @@ class Champuru {
     /**
      * Calculate the score of an overlap.
      */
-    public static function calcScore(fwd:String, rev:String, i:Int):{score:Float, matches:Int, mismatches:Int} {
-        var matches:Int = 0, mismatches:Int = 0;
+    public static function calcScore(fwd:String, rev:String, i:Int, old:Bool):{score:Float, matches:Int, mismatches:Int} {
+        var matches:Int = 0, fullMatches:Int = 0, mismatches:Int = 0;
         var fwdCorr:Int = (i < 0) ? -i : 0;
         var revCorr:Int = (i > 0) ?  i : 0;
         // minStrLen(=fwdL/revL) - start(=fwdCorr+revCorr)
@@ -90,16 +90,18 @@ class Champuru {
         for (pos in 0...overlap) {
             var a:String = fwd.charAt(pos + fwdCorr);
             var b:String = rev.charAt(pos + revCorr);
-            if (compareBases(a, b)) {
+            if (a == b && (a == 'A' || a == 'C' || a == 'G' || a == 'T')) {
+                fullMatches++;
+            } else if (compareBases(a, b)) {
                 matches++;
             } else {
                 mismatches++;
             }
         }
         return {
-            matches : matches,
+            matches : matches + fullMatches,
             mismatches : mismatches,
-            score : matches - 0.25 * overlap
+            score : (old) ? matches + fullMatches - 0.25 * overlap : fullMatches + 0.5 * matches - 0.25 * overlap
         };
     }
 
@@ -110,10 +112,10 @@ class Champuru {
     /**
      * Calculate overlap scores
      */
-    public static function calcOverlapScores(fwd:String, rev:String):Array<{nr:Int, index:Int, score:Float, matches:Int, mismatches:Int}> {
+    public static function calcOverlapScores(fwd:String, rev:String, old:Bool):Array<{nr:Int, index:Int, score:Float, matches:Int, mismatches:Int}> {
         var result:Array<{nr:Int, index:Int, score:Float, matches:Int, mismatches:Int}> = new Array<{nr:Int, index:Int, score:Float, matches:Int, mismatches:Int}>();
         for (i in -fwd.length+1...rev.length) {
-            var score:{score:Float, matches:Int, mismatches:Int} = calcScore(fwd, rev, i);
+            var score:{score:Float, matches:Int, mismatches:Int} = calcScore(fwd, rev, i, old);
             result.push({
                 nr : i - fwd.length + 1,
                 index : i,
@@ -179,24 +181,60 @@ class Champuru {
         return result.join("");
     }
 
-    public static function getPart(fwd:String, rev:String, i:Int):{a:String, b:String} {
+    public static function getPart(fwd:String, rev:String, i:Int):{a:Vector<Int>, b:Vector<Int>} {
         var fwdCorr:Int = (i < 0) ? -i : 0;
         var revCorr:Int = (i > 0) ?  i : 0;
         var fwdL:Int = fwdCorr + rev.length;
         var revL:Int = revCorr + fwd.length;
         var overlap:Int = ((fwdL < revL) ? fwdL : revL) - (fwdCorr + revCorr);
-        return null;
+        var oFwd:String = fwd.substr(overlap);
+        var oRev:String = rev.substr(overlap);
+        return {
+            a : toInts(oFwd),
+            b : toInts(oRev)
+        };
     }
 
+// TODO
+    public static function check(a:Vector<Int>, b:Vector<Int>, pos:Int, i:Int, j:Int, expected1:{a:Vector<Int>, b:Vector<Int>}, expected2:{a:Vector<Int>, b:Vector<Int>}):Int {
+        var code:Int = a[pos];
+        for (n in [1, 2, 4, 8]) {
+            if (code & n == 0) {
+                continue;
+            }
+            // remove pos, then check whether there is an error
+        }
+        return code;
+    }
     public static function reconstructSeq(fwd:String, rev:String, sequenceA:String, sequenceB:String, i:Int, j:Int):{a:String, b:String} {
         var a:Vector<Int> = toInts(sequenceA), b:Vector<Int> = toInts(sequenceB);
-        // fwd
-        // rev
-// TODO
+        var expected1:{a:Vector<Int>, b:Vector<Int>} = getPart(fwd, rev, i);
+        var expected2:{a:Vector<Int>, b:Vector<Int>} = getPart(fwd, rev, j);
         var found:Bool = true;
         while (found) {
             found = false;
-            
+            for (pos in 0...a.length) {
+                var valAtCurPos:Int = a[pos];
+                if (valAtCurPos & (valAtCurPos - 1) == 0) { // _, A, C, T or G
+                    continue;
+                }
+                var res:Int = check(a, b, pos, i, j, expected1, expected2);
+                if (res != a[pos]) {
+                    a[pos] = res;
+                    found = true;
+                }
+            }
+            for (pos in 0...b.length) {
+                var valAtCurPos:Int = b[pos];
+                if (valAtCurPos & (valAtCurPos - 1) == 0) { // _, A, C, T or G
+                    continue;
+                }
+                var res:Int = check(b, a, pos, i, j, expected1, expected2);
+                if (res != b[pos]) {
+                    b[pos] = res;
+                    found = true;
+                }
+            }
         }
         return {
             a : toString(a),
@@ -206,7 +244,7 @@ class Champuru {
 
     public static function genScorePlot(scores:Array<{nr:Int, index:Int, score:Float, matches:Int, mismatches:Int}>, high:Float, low:Float):String {
         var result:List<String> = new List<String>();
-        result.add("<svg class='plot middle' width='600' height='400'>"); // 600
+        result.add("<svg id='scorePlot' class='plot middle' width='600' height='400'>");
         result.add("<rect width='600' height='400' style='fill:white' />");
         result.add("<text x='010' y='200' text-anchor='middle' style='font-family: monospace; text-size: 12.5px' transform='rotate(270 7.5 195)'>Score</text>");
         result.add("<text x='300' y='395' text-anchor='middle' style='font-family: monospace; text-size: 12.5px'>Offset</text>");
@@ -215,7 +253,8 @@ class Champuru {
         for (score in scores) {
             var x:Float = 30 + (560.0 * (i / scores.length));
             var y:Float = 370 - (350 * ((score.score - low) / d));
-            result.add("<circle cx='" + x + "' cy='" + y + "' r='2' fill='black' />");
+            var alertMsg:String = "Offset: " + score.index + "\\nScore: " + score.score + "\\nMatches: " + score.matches + "\\nMismatches: " + score.mismatches;
+            result.add("<circle id='c" + score.index + "' cx='" + x + "' cy='" + y + "' r='2' fill='black' title='" + 1 + "' onclick='alert(\"" + alertMsg + "\")' />");
             i++;
         }
         result.add("</svg>");
@@ -224,7 +263,7 @@ class Champuru {
     public static function genScorePlotHist(scores:Array<{nr:Int, index:Int, score:Float, matches:Int, mismatches:Int}>, high:Float, low:Float):String {
         var d:Float = high - low;
         var result:List<String> = new List<String>();
-        result.add("<svg class='plot middle' width='600' height='400'>"); // 600
+        result.add("<svg id='scorePlotHist' class='plot middle' width='600' height='400'>");
         result.add("<rect width='600' height='400' style='fill:white' />");
         result.add("<text x='010' y='200' text-anchor='middle' style='font-family: monospace; text-size: 12.5px' transform='rotate(270 7.5 195)'>Frequency</text>");
         result.add("<text x='300' y='395' text-anchor='start' style='font-family: monospace; text-size: 12.5px'>Score</text>");
@@ -261,18 +300,22 @@ class Champuru {
             var x:Float = 30 + i * 20;
             var h:Float = val * 350;
             var y:Float = 365 - h;
-            result.add("<rect x='" + x + "' y='" + y + "' width='20' height='" + h + "' />");
+            var from:Float = Math.round((i * hd + low) * 10) / 10.0;
+            var to:Float = Math.round(((i + 1) * hd + low) * 10) / 10.0;
+            var percentage:Float = (Math.round(v[i] / scores.length * 1000) / 10.0);
+            var alertMsg:String = "From: " + from + "\\nTo: " + to + "\\nCount: " + v[i] + " (" + percentage + "%)";
+            result.add("<rect x='" + x + "' y='" + y + "' width='20' height='" + h + "' onclick='alert(\"" + alertMsg + "\");' />");
         }
         result.add("</g>");
         result.add("</svg>");
         return result.join("");
     }
 
-    public static function doChampuru(fwd:String, rev:String):String {
+    public static function doChampuru(fwd:String, rev:String, old:Bool):String {
         mMsgs.clear();
 
         var timestamp1:Float = Timer.stamp();
-        var scores:Array<{nr:Int, index:Int, score:Float, matches:Int, mismatches:Int}> = calcOverlapScores(fwd, rev);
+        var scores:Array<{nr:Int, index:Int, score:Float, matches:Int, mismatches:Int}> = calcOverlapScores(fwd, rev, old);
         var timestamp2:Float = Timer.stamp();
         var sortedScores:Array<{nr:Int, index:Int, score:Float, matches:Int, mismatches:Int}> = scores.copy();
         sortedScores.sort(function(a:{nr:Int, index:Int, score:Float, matches:Int, mismatches:Int}, b:{nr:Int, index:Int, score:Float, matches:Int, mismatches:Int}):Int {
@@ -293,7 +336,7 @@ class Champuru {
         out("</tr>");
         var i:Int = 1;
         for (score in sortedScores) {
-            out("<tr class='" + ((i % 2 == 0) ? "odd" : "even") + "'>");
+            out("<tr class='" + ((i % 2 == 0) ? "odd" : "even") + "' onmouseover='highlight(\"c" + score.index + "\")' onmouseout='removeHighlight(\"c" + score.index + "\")'>");
             out("<td>" + i + "</td><td>" + score.index + "</td><td>" + score.score + "</td><td>" +  score.matches + "</td><td>" + score.mismatches + "</td>");
             out("</tr>");
             i++;
@@ -381,7 +424,7 @@ class Champuru {
             out("<p>There are " + ambPos + " ambigiouties left!</p>");
         }
         if (ambPos > 0) {
-            out("<span class='middle'><button onclick='colorAmbPos()'>Color Ambigiouties</button><button onclick='removeColorFinal()'>Remove color</button></span>");
+            out("<span class='middle'><button onclick='colorAmbPos()'>Color ambigiouties</button><button onclick='removeColorFinal()'>Remove color</button></span>");
         }
         out("</fieldset>");
 
@@ -395,7 +438,8 @@ class Champuru {
         try {
             var fwd:String = cast(e.data.fwd, String);
             var rev:String = cast(e.data.rev, String);
-            var result:String = doChampuru(fwd, rev);
+            var old:Bool = cast(e.data.old, Bool);
+            var result:String = doChampuru(fwd, rev, old);
             workerScope.postMessage(result);
         } catch(e:Dynamic) {
             workerScope.postMessage("The following error occurred: " + e);

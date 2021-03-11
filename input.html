@@ -47,6 +47,17 @@
                         </p>
                     </td>
                 </tr>
+                <tr class="option">
+                    <td>Old score calculation method:</td>
+                    <td>&nbsp;&nbsp;&nbsp;</td>
+                    <td><input id="old" type="checkbox" autocomplete="off"/></td>
+                </tr>
+                <tr class="description">
+                    <td colspan="3">
+                        <p>Use the old score calculation method. The old score calculation method tends to work better on short sequences,
+                        while the new calculation method tends to work better if the consensus sequence contains a lot of ambigiouties.</p>
+                    </td>
+                </tr>
             </table>
             <span class="middle">
                 <button onclick="calculate()">Calculate</button>
@@ -117,6 +128,7 @@ function checkInput(s) {
 function calculate() {
     var fwd = document.getElementById('forward').value;
     var rev = document.getElementById('reverse').value;
+    var old = document.getElementById('old').checked;
 
     if (fwd == "") {
         alert("Missing forward sequence input!");
@@ -151,7 +163,7 @@ function calculate() {
         data = e.data;
         resultArea.innerHTML = data;
     });
-    worker.postMessage({"fwd" : fwd, "rev" : rev});
+    worker.postMessage({"fwd" : fwd, "rev" : rev, "old" : old});
 }
 
 function resetForm() {
@@ -259,6 +271,24 @@ function download() {
     var link = "<a id='downloadLink' href-lang='text/fasta' href='data:text/fasta;base64,\n" + b64 + "' title='result.fasta' style='display:none' download='result.fasta'>Download</a>";
     document.getElementById("hiddenDiv").innerHTML = link;
     document.getElementById('downloadLink').click();
+}
+function highlight(id) {
+    var circle = document.getElementById(id);
+    var x = circle.getAttribute("cx");
+    var y = circle.getAttribute("cy");
+    var svg = document.getElementById("scorePlot");
+    var newElement = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    newElement.setAttribute("id", "addedCircle");
+    newElement.setAttribute("cx", x);
+    newElement.setAttribute("cy", y);
+    newElement.setAttribute("fill", "red");
+    newElement.setAttribute("r", "2");
+    svg.appendChild(newElement);
+}
+function removeHighlight(id) {
+    var svg = document.getElementById("scorePlot");
+    var circle = document.getElementById("addedCircle");
+    svg.removeChild(circle);
 }
 
         </script>
