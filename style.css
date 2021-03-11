@@ -167,6 +167,6 @@ legend {
     font-family: monospace, monospace;
     background-color: red;
 }
-svg {
+.plot {
     border: 1px solid black;
 }
