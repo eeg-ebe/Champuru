@@ -48,6 +48,7 @@ p {
 .contentdiv .middle {
     display: block;
     text-align: center;
+    margin: 0 auto;
 }
 .contentdiv button {
     width: 250px;
@@ -165,4 +166,7 @@ legend {
 .bgred {
     font-family: monospace, monospace;
     background-color: red;
+}
+svg {
+    border: 1px solid black;
 }
