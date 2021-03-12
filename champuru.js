@@ -86,20 +86,53 @@ champuru_Champuru.calcScore = function(fwd,rev,i,scoreCalculationMethod) {
 	var fwdL = fwdCorr + rev.length;
 	var revL = revCorr + fwd.length;
 	var overlap = (fwdL < revL ? fwdL : revL) - (fwdCorr + revCorr);
-	var _g1 = 0;
-	var _g = overlap;
-	while(_g1 < _g) {
-		var pos = _g1++;
-		var a = fwd.charAt(pos + fwdCorr);
-		var b = rev.charAt(pos + revCorr);
-		if(a == b && (a == "A" || a == "C" || a == "G" || a == "T")) {
+	if(scoreCalculationMethod == 2) {
+		var maxScore = 0;
+		var cScore = 0;
+		var _g1 = 0;
+		var _g = overlap;
+		while(_g1 < _g) {
+			var pos = _g1++;
+			var a = fwd.charAt(pos + fwdCorr);
+			var b = rev.charAt(pos + revCorr);
+			if(a == b && (a == "A" || a == "C" || a == "G" || a == "T")) {
+				++fullMatches;
+				++cScore;
+			} else {
+				var _this = champuru_Champuru.CHARS_TO_INT;
+				var aa = __map_reserved[a] != null ? _this.getReserved(a) : _this.h[a];
+				var _this1 = champuru_Champuru.CHARS_TO_INT;
+				var ba = __map_reserved[b] != null ? _this1.getReserved(b) : _this1.h[b];
+				if((aa & ba) != 0) {
+					++matches;
+					++cScore;
+				} else {
+					++mismatches;
+					cScore = 0;
+				}
+			}
+			if(maxScore > cScore) {
+				maxScore = maxScore;
+			} else {
+				maxScore = cScore;
+			}
+		}
+		return { matches : matches + fullMatches, mismatches : mismatches, score : maxScore};
+	}
+	var _g11 = 0;
+	var _g2 = overlap;
+	while(_g11 < _g2) {
+		var pos1 = _g11++;
+		var a1 = fwd.charAt(pos1 + fwdCorr);
+		var b1 = rev.charAt(pos1 + revCorr);
+		if(a1 == b1 && (a1 == "A" || a1 == "C" || a1 == "G" || a1 == "T")) {
 			++fullMatches;
 		} else {
-			var _this = champuru_Champuru.CHARS_TO_INT;
-			var aa = __map_reserved[a] != null ? _this.getReserved(a) : _this.h[a];
-			var _this1 = champuru_Champuru.CHARS_TO_INT;
-			var ba = __map_reserved[b] != null ? _this1.getReserved(b) : _this1.h[b];
-			if((aa & ba) != 0) {
+			var _this2 = champuru_Champuru.CHARS_TO_INT;
+			var aa1 = __map_reserved[a1] != null ? _this2.getReserved(a1) : _this2.h[a1];
+			var _this3 = champuru_Champuru.CHARS_TO_INT;
+			var ba1 = __map_reserved[b1] != null ? _this3.getReserved(b1) : _this3.h[b1];
+			if((aa1 & ba1) != 0) {
 				++matches;
 			} else {
 				++mismatches;
@@ -411,7 +444,11 @@ champuru_Champuru.doChampuru = function(fwd,rev,scoreCalculationMethod) {
 	var timestamp2 = new Date().getTime() / 1000;
 	var sortedScores = scores.slice();
 	sortedScores.sort(function(a,b) {
-		return Math.ceil(b.score - a.score);
+		var result = Math.ceil(b.score - a.score);
+		if(result != 0) {
+			return result;
+		}
+		return a.mismatches - b.mismatches;
 	});
 	var timestamp3 = new Date().getTime() / 1000;
 	var lowestScore = sortedScores.pop();

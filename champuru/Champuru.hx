@@ -81,12 +81,39 @@ class Champuru {
      */
     public static function calcScore(fwd:String, rev:String, i:Int, scoreCalculationMethod:Int):{score:Float, matches:Int, mismatches:Int} {
         var matches:Int = 0, fullMatches:Int = 0, mismatches:Int = 0;
+
         var fwdCorr:Int = (i < 0) ? -i : 0;
         var revCorr:Int = (i > 0) ?  i : 0;
         // minStrLen(=fwdL/revL) - start(=fwdCorr+revCorr)
         var fwdL:Int = fwdCorr + rev.length;
         var revL:Int = revCorr + fwd.length;
         var overlap:Int = ((fwdL < revL) ? fwdL : revL) - (fwdCorr + revCorr);
+
+        if (scoreCalculationMethod == 2) {
+            var maxScore:Int = 0;
+            var cScore:Int = 0;
+            for (pos in 0...overlap) {
+                var a:String = fwd.charAt(pos + fwdCorr);
+                var b:String = rev.charAt(pos + revCorr);
+                if (a == b && (a == 'A' || a == 'C' || a == 'G' || a == 'T')) {
+                    fullMatches++;
+                    cScore++;
+                } else if (compareBases(a, b)) {
+                    matches++;
+                    cScore++;
+                } else {
+                    mismatches++;
+                    cScore = 0;
+                }
+                maxScore = (maxScore > cScore) ? maxScore : cScore;
+            }
+            return {
+                matches : matches + fullMatches,
+                mismatches : mismatches,
+                score : maxScore
+            };
+        }
+
         for (pos in 0...overlap) {
             var a:String = fwd.charAt(pos + fwdCorr);
             var b:String = rev.charAt(pos + revCorr);
@@ -370,7 +397,11 @@ trace("" + (i > 0) + " " + (j > 0) + " " + (shift > 0) + " = " + rAA + " | " + r
         var timestamp2:Float = Timer.stamp();
         var sortedScores:Array<{nr:Int, index:Int, score:Float, matches:Int, mismatches:Int}> = scores.copy();
         sortedScores.sort(function(a:{nr:Int, index:Int, score:Float, matches:Int, mismatches:Int}, b:{nr:Int, index:Int, score:Float, matches:Int, mismatches:Int}):Int {
-            return Math.ceil(b.score - a.score);
+            var result:Int = Math.ceil(b.score - a.score);
+            if (result != 0) {
+                return result;
+            }
+            return a.mismatches - b.mismatches;
         });
         var timestamp3:Float = Timer.stamp();
         // hey why is there no function to get but not remove the last element of an array?
