@@ -79,7 +79,7 @@ class Champuru {
     /**
      * Calculate the score of an overlap.
      */
-    public static function calcScore(fwd:String, rev:String, i:Int, old:Bool):{score:Float, matches:Int, mismatches:Int} {
+    public static function calcScore(fwd:String, rev:String, i:Int, scoreCalculationMethod:Int):{score:Float, matches:Int, mismatches:Int} {
         var matches:Int = 0, fullMatches:Int = 0, mismatches:Int = 0;
         var fwdCorr:Int = (i < 0) ? -i : 0;
         var revCorr:Int = (i > 0) ?  i : 0;
@@ -101,21 +101,21 @@ class Champuru {
         return {
             matches : matches + fullMatches,
             mismatches : mismatches,
-            score : (old) ? matches + fullMatches - 0.25 * overlap : fullMatches + 0.5 * matches - 0.25 * overlap
+            score : (scoreCalculationMethod == 0) ? matches + fullMatches - 0.25 * overlap : fullMatches + 0.5 * matches - 0.25 * overlap
         };
     }
 
-    public static function timeToStr(f:Float):String {
+    public static inline function timeToStr(f:Float):String {
         return "" + Math.round(f * 1000);
     }
 
     /**
      * Calculate overlap scores
      */
-    public static function calcOverlapScores(fwd:String, rev:String, old:Bool):Array<{nr:Int, index:Int, score:Float, matches:Int, mismatches:Int}> {
+    public static function calcOverlapScores(fwd:String, rev:String, scoreCalculationMethod:Int):Array<{nr:Int, index:Int, score:Float, matches:Int, mismatches:Int}> {
         var result:Array<{nr:Int, index:Int, score:Float, matches:Int, mismatches:Int}> = new Array<{nr:Int, index:Int, score:Float, matches:Int, mismatches:Int}>();
         for (i in -fwd.length+1...rev.length) {
-            var score:{score:Float, matches:Int, mismatches:Int} = calcScore(fwd, rev, i, old);
+            var score:{score:Float, matches:Int, mismatches:Int} = calcScore(fwd, rev, i, scoreCalculationMethod);
             result.push({
                 nr : i - fwd.length + 1,
                 index : i,
@@ -169,76 +169,127 @@ class Champuru {
         var result:Vector<Int> = new Vector<Int>(s.length);
         for (i in 0...s.length) {
             var chr:String = s.charAt(i);
-            result[i] = CHARS_TO_INT.get(chr);
+            if (CHARS_TO_INT.exists(chr)) {
+                result[i] = CHARS_TO_INT.get(chr);
+            } else {
+                result[i] = 0;
+            }
         }
         return result;
     }
     public static function toString(v:Vector<Int>):String {
         var result:List<String> = new List<String>();
         for (int in v) {
-            result.add(INTS_TO_CHAR.get(int));
+            if (INTS_TO_CHAR.exists(int)) {
+                result.add(INTS_TO_CHAR.get(int));
+            } else {
+                result.add("_");
+            }
         }
         return result.join("");
     }
 
-    public static function getPart(fwd:String, rev:String, i:Int):{a:Vector<Int>, b:Vector<Int>} {
-        var fwdCorr:Int = (i < 0) ? -i : 0;
-        var revCorr:Int = (i > 0) ?  i : 0;
-        var fwdL:Int = fwdCorr + rev.length;
-        var revL:Int = revCorr + fwd.length;
-        var overlap:Int = ((fwdL < revL) ? fwdL : revL) - (fwdCorr + revCorr);
-        var oFwd:String = fwd.substr(overlap);
-        var oRev:String = rev.substr(overlap);
-        return {
-            a : toInts(oFwd),
-            b : toInts(oRev)
-        };
-    }
-
-// TODO
-    public static function check(a:Vector<Int>, b:Vector<Int>, pos:Int, i:Int, j:Int, expected1:{a:Vector<Int>, b:Vector<Int>}, expected2:{a:Vector<Int>, b:Vector<Int>}):Int {
-        var code:Int = a[pos];
-        for (n in [1, 2, 4, 8]) {
-            if (code & n == 0) {
-                continue;
-            }
-            // remove pos, then check whether there is an error
+    public static function reverse(seq:Vector<Int>):Vector<Int> {
+        var result:Vector<Int> = new Vector<Int>(seq.length);
+        var i:Int = 1;
+        for (val in seq) {
+            result[seq.length - i] = val;
+            ++i;
         }
-        return code;
+        return result;
+    }
+    public static function diff(a:Vector<Int>, b:Vector<Int>, shift:Int):Vector<Int> {
+        var result:Vector<Int> = new Vector<Int>(a.length);
+        for (i in 0...a.length) {
+            var a_:Int = a[i];
+            var b_:Int = (i + shift >= 0 && i + shift < b.length) ? b[i + shift] : 0;
+            if (b_ == 0) {
+                result[i] = a_;
+            } else {
+                result[i] = a_ & b_;
+            }
+        }
+        return result;
+    }
+    public static function minus(orig:Vector<Int>, cons:Vector<Int>, idx:Int):Vector<Int> {
+        var origCorr:Int = (idx < 0) ? -idx : 0;
+        var result:Vector<Int> = new Vector<Int>(cons.length);
+        for (i in 0...cons.length) {
+            var a:Int = orig[i + origCorr];
+            var b:Int = cons[i];
+            if (a == b && (a == 1 || a == 2 || a == 4 || a == 8)) {
+                result[i] = a;
+            } else if (a == b) {
+                result[i] = a;
+            } else {
+                result[i] = a - b;
+            }
+            if (result[i] < 0) throw "Self-check failed. There is something is wrong here! It would be nice if you could send your sequences to jflot@ulb.ac.be so that we may fix this problem.";
+        }
+        return result;
     }
     public static function reconstructSeq(fwd:String, rev:String, sequenceA:String, sequenceB:String, i:Int, j:Int):{a:String, b:String} {
-        var a:Vector<Int> = toInts(sequenceA), b:Vector<Int> = toInts(sequenceB);
-        var expected1:{a:Vector<Int>, b:Vector<Int>} = getPart(fwd, rev, i);
-        var expected2:{a:Vector<Int>, b:Vector<Int>} = getPart(fwd, rev, j);
-        var found:Bool = true;
-        while (found) {
-            found = false;
-            for (pos in 0...a.length) {
-                var valAtCurPos:Int = a[pos];
-                if (valAtCurPos & (valAtCurPos - 1) == 0) { // _, A, C, T or G
-                    continue;
-                }
-                var res:Int = check(a, b, pos, i, j, expected1, expected2);
-                if (res != a[pos]) {
-                    a[pos] = res;
-                    found = true;
-                }
+        var fwd_:Vector<Int> = toInts(fwd), rev_:Vector<Int> = toInts(rev), a_:Vector<Int> = toInts(sequenceA), b_:Vector<Int> = toInts(sequenceB);
+
+        var restF:Vector<Int> = minus(fwd_, a_, i);
+        var restR:Vector<Int> = minus(rev_, b_, -j);
+
+        var shift:Int = i - j;
+        var ashift:Int = 0, bshift:Int = 0;
+        if (i > 0) {
+            if (j > 0) {
+                ashift = shift;
+                bshift = 0;
+            } else {
+                ashift = 0;
+                bshift = shift;
             }
-            for (pos in 0...b.length) {
-                var valAtCurPos:Int = b[pos];
-                if (valAtCurPos & (valAtCurPos - 1) == 0) { // _, A, C, T or G
-                    continue;
-                }
-                var res:Int = check(b, a, pos, i, j, expected1, expected2);
-                if (res != b[pos]) {
-                    b[pos] = res;
-                    found = true;
-                }
+        } else {
+            if (j > 0) {
+                ashift = shift;
+                bshift = 0;
+            } else {
+                ashift = 0;
+                bshift = shift;
             }
         }
+        var reconstructedA_:Vector<Int> = diff(a_, restR, ashift);
+        var reconstructedB_:Vector<Int> = diff(b_, restF, bshift);
+
+var rAA = "";
+if (countProblems(toString(diff(a_, restR, 0))) == 0) {
+    rAA += "0,";
+}
+if (countProblems(toString(diff(a_, restR, shift))) == 0) {
+    rAA += "shift,";
+}
+if (countProblems(toString(diff(a_, restR, -shift))) == 0) {
+    rAA += "neg.shift,";
+}
+
+var rBB = "";
+if (countProblems(toString(diff(b_, restF, 0))) == 0) {
+    rBB += "0,";
+}
+if (countProblems(toString(diff(b_, restF, shift))) == 0) {
+    rBB += "shift,";
+}
+if (countProblems(toString(diff(b_, restF, -shift))) == 0) {
+    rBB += "neg.shift,";
+}
+
+trace("" + (i > 0) + " " + (j > 0) + " " + (shift > 0) + " = " + rAA + " | " + rBB);
+
+        var recA:String = toString(reconstructedA_);
+        var recB:String = toString(reconstructedB_);
+
+        if (recA != sequenceA || recB != sequenceB) {
+            return reconstructSeq(fwd, rev, recA, recB, i, j);
+        }
+
         return {
-            a : toString(a),
-            b : toString(b)
+            a : recA,
+            b : recB
         };
     }
 
@@ -311,11 +362,11 @@ class Champuru {
         return result.join("");
     }
 
-    public static function doChampuru(fwd:String, rev:String, old:Bool):String {
+    public static function doChampuru(fwd:String, rev:String, scoreCalculationMethod:Int) {
         mMsgs.clear();
 
         var timestamp1:Float = Timer.stamp();
-        var scores:Array<{nr:Int, index:Int, score:Float, matches:Int, mismatches:Int}> = calcOverlapScores(fwd, rev, old);
+        var scores:Array<{nr:Int, index:Int, score:Float, matches:Int, mismatches:Int}> = calcOverlapScores(fwd, rev, scoreCalculationMethod);
         var timestamp2:Float = Timer.stamp();
         var sortedScores:Array<{nr:Int, index:Int, score:Float, matches:Int, mismatches:Int}> = scores.copy();
         sortedScores.sort(function(a:{nr:Int, index:Int, score:Float, matches:Int, mismatches:Int}, b:{nr:Int, index:Int, score:Float, matches:Int, mismatches:Int}):Int {
@@ -428,7 +479,10 @@ class Champuru {
         }
         out("</fieldset>");
 
-        return mMsgs.join("");
+        return {
+            result : mMsgs.join(""),
+            problematicPositions : problems
+        };
     }
 
     #if js
@@ -438,8 +492,8 @@ class Champuru {
         try {
             var fwd:String = cast(e.data.fwd, String);
             var rev:String = cast(e.data.rev, String);
-            var old:Bool = cast(e.data.old, Bool);
-            var result:String = doChampuru(fwd, rev, old);
+            var scoreCalculationMethod:Int = cast(e.data.score, Int);
+            var result = doChampuru(fwd, rev, scoreCalculationMethod);
             workerScope.postMessage(result);
         } catch(e:Dynamic) {
             workerScope.postMessage("The following error occurred: " + e);

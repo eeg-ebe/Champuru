@@ -154,6 +154,19 @@ legend {
 .scoreTable .even:hover {
     background-color: yellow;
 }
+.descTable {
+    border-collapse: collapse;
+}
+.descTable td {
+    padding-top: 3px;
+    padding-bottom: 3px;
+}
+.descTable .even {
+    background-color: white;
+}
+.descTable .odd {
+    background-color: white;
+}
 .scoreTable .even {
     background-color: #eee;
 }

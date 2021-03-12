@@ -48,14 +48,29 @@
                     </td>
                 </tr>
                 <tr class="option">
-                    <td>Old score calculation method:</td>
+                    <td>Score calculation:</td>
                     <td>&nbsp;&nbsp;&nbsp;</td>
-                    <td><input id="old" type="checkbox" autocomplete="off"/></td>
+                    <td>
+                        <select id="score" autocomplete="off">
+                            <option value="0">Paper</option>
+                            <option value="1" selected="selected">Ambigious correction</option>
+                        </select>
+                    </td>
                 </tr>
                 <tr class="description">
                     <td colspan="3">
-                        <p>Use the old score calculation method. The old score calculation method tends to work better on short sequences,
-                        while the new calculation method tends to work better if the consensus sequence contains a lot of ambigiouties.</p>
+                        <p>Which score calculation method to use. Currently the following methods are implemented:</p>
+                        <table class="descTable">
+                            <tr class="even">
+                                <td valign="top">Paper</td><td>The score correction method described in the Champuru 1.0 paper.</td>
+                            </tr>
+                            <tr class="odd">
+                                <td valign="top">Ambigious correction</td><td>A modification of the score correction method described in the Champuru 1.0 paper.
+Preliminary results suggests that the ambigious correction score calculation method works better when the reconstructed consensus sequences contain a lot of ambigiouties.
+However this score correction method seems to work less good on short input sequences.
+</td>
+                            </tr>
+                        </table>
                     </td>
                 </tr>
             </table>
@@ -128,7 +143,7 @@ function checkInput(s) {
 function calculate() {
     var fwd = document.getElementById('forward').value.trim().toUpperCase();
     var rev = document.getElementById('reverse').value.trim().toUpperCase();
-    var old = document.getElementById('old').checked;
+    var score = parseInt(document.getElementById('score').value);
 
     if (fwd == "") {
         alert("Missing forward sequence input!");
@@ -161,9 +176,9 @@ function calculate() {
     var worker = new Worker("champuru.js");
     worker.addEventListener("message", function(e) {
         data = e.data;
-        resultArea.innerHTML = data;
+        resultArea.innerHTML = data.result;
     });
-    worker.postMessage({"fwd" : fwd, "rev" : rev, "old" : old});
+    worker.postMessage({"fwd" : fwd, "rev" : rev, "score" : score});
 }
 
 function resetForm() {
@@ -289,6 +304,34 @@ function removeHighlight(id) {
     var svg = document.getElementById("scorePlot");
     var circle = document.getElementById("addedCircle");
     svg.removeChild(circle);
+}
+
+function checkSingle(a, b) {
+    var worker = new Worker("champuru.js");
+    worker.addEventListener("message", function(e) {
+        data = e.data;
+        if (data.problematicPositions > 0) {
+            console.log("NOT OK for " + a + ", " + b)
+        }
+        resultArea.innerHTML = data.result;
+    });
+    worker.postMessage({"fwd" : a, "rev" : b, "score" : 1});
+}
+function check(a, b) {
+    checkSingle(a, b);
+    checkSingle(b, a);
+}
+function selfCheck() {
+    for (var i = 1; i <= 4; i++) {
+        var f = document.getElementById("example" + i + "forward").innerText;
+        var r = document.getElementById("example" + i + "reverse").innerText;
+        check(f, r);
+    }
+    check("GCMYKSMM", "SCWSYRMC");
+    check("SMMYKSMA", "MMYKSMAM");
+    check("MMYKSMAMCCCCCC", "AAAAASMMYKSMA");
+    check("GCAACTTAGGCAGGGCCCCTCCGCCTAGAAAGTGCTTCTCGCAACTACAACTCGCCGATGCAGGCATCGGAGATTTCAAATTTG", "AAGCAACTTAGGCAGGGCCCCTCCGCCTAGAAAGTGCTTCTCGCAACTACAACTCGCCGATGCAGGCATCGGAGATTTCAAATT");
+    check("AAATSSYKRWTYMMMMMRSSRMSGSCCYWRSMWWMCCSRRGGRWYSGRARR", "MRMTGMTKMWYMMMRCRRCGRCSSYMSYAKMMYMSMSGRRKSRKMRGRRKA");
 }
 
         </script>

@@ -6,20 +6,6 @@ function $extend(from, fields) {
 	if( fields.toString !== Object.prototype.toString ) proto.toString = fields.toString;
 	return proto;
 }
-var HxOverrides = function() { };
-HxOverrides.__name__ = true;
-HxOverrides.substr = function(s,pos,len) {
-	if(len == null) {
-		len = s.length;
-	} else if(len < 0) {
-		if(pos == 0) {
-			len = s.length + len;
-		} else {
-			return "";
-		}
-	}
-	return s.substr(pos,len);
-};
 var List = function() {
 	this.length = 0;
 };
@@ -91,7 +77,7 @@ champuru_Champuru.getMatchChar = function(a,b) {
 	var c = ia & ib;
 	return champuru_Champuru.INTS_TO_CHAR.h[c];
 };
-champuru_Champuru.calcScore = function(fwd,rev,i,old) {
+champuru_Champuru.calcScore = function(fwd,rev,i,scoreCalculationMethod) {
 	var matches = 0;
 	var fullMatches = 0;
 	var mismatches = 0;
@@ -120,18 +106,18 @@ champuru_Champuru.calcScore = function(fwd,rev,i,old) {
 			}
 		}
 	}
-	return { matches : matches + fullMatches, mismatches : mismatches, score : old ? matches + fullMatches - 0.25 * overlap : fullMatches + 0.5 * matches - 0.25 * overlap};
+	return { matches : matches + fullMatches, mismatches : mismatches, score : scoreCalculationMethod == 0 ? matches + fullMatches - 0.25 * overlap : fullMatches + 0.5 * matches - 0.25 * overlap};
 };
 champuru_Champuru.timeToStr = function(f) {
 	return "" + Math.round(f * 1000);
 };
-champuru_Champuru.calcOverlapScores = function(fwd,rev,old) {
+champuru_Champuru.calcOverlapScores = function(fwd,rev,scoreCalculationMethod) {
 	var result = [];
 	var _g1 = -fwd.length + 1;
 	var _g = rev.length;
 	while(_g1 < _g) {
 		var i = _g1++;
-		var score = champuru_Champuru.calcScore(fwd,rev,i,old);
+		var score = champuru_Champuru.calcScore(fwd,rev,i,scoreCalculationMethod);
 		result.push({ nr : i - fwd.length + 1, index : i, score : score.score, matches : score.matches, mismatches : score.mismatches});
 	}
 	return result;
@@ -196,7 +182,12 @@ champuru_Champuru.toInts = function(s) {
 		var i = _g1++;
 		var chr = s.charAt(i);
 		var _this = champuru_Champuru.CHARS_TO_INT;
-		result[i] = __map_reserved[chr] != null ? _this.getReserved(chr) : _this.h[chr];
+		if(__map_reserved[chr] != null ? _this.existsReserved(chr) : _this.h.hasOwnProperty(chr)) {
+			var _this1 = champuru_Champuru.CHARS_TO_INT;
+			result[i] = __map_reserved[chr] != null ? _this1.getReserved(chr) : _this1.h[chr];
+		} else {
+			result[i] = 0;
+		}
 	}
 	return result;
 };
@@ -206,71 +197,124 @@ champuru_Champuru.toString = function(v) {
 	while(_g < v.length) {
 		var $int = v[_g];
 		++_g;
-		result.add(champuru_Champuru.INTS_TO_CHAR.h[$int]);
+		if(champuru_Champuru.INTS_TO_CHAR.h.hasOwnProperty($int)) {
+			result.add(champuru_Champuru.INTS_TO_CHAR.h[$int]);
+		} else {
+			result.add("_");
+		}
 	}
 	return result.join("");
 };
-champuru_Champuru.getPart = function(fwd,rev,i) {
-	var fwdCorr = i < 0 ? -i : 0;
-	var revCorr = i > 0 ? i : 0;
-	var fwdL = fwdCorr + rev.length;
-	var revL = revCorr + fwd.length;
-	var overlap = (fwdL < revL ? fwdL : revL) - (fwdCorr + revCorr);
-	var oFwd = HxOverrides.substr(fwd,overlap,null);
-	var oRev = HxOverrides.substr(rev,overlap,null);
-	return { a : champuru_Champuru.toInts(oFwd), b : champuru_Champuru.toInts(oRev)};
-};
-champuru_Champuru.check = function(a,b,pos,i,j,expected1,expected2) {
-	var code = a[pos];
+champuru_Champuru.reverse = function(seq) {
+	var length = seq.length;
+	var this1 = new Array(length);
+	var result = this1;
+	var i = 1;
 	var _g = 0;
-	var _g1 = [1,2,4,8];
-	while(_g < _g1.length) {
-		var n = _g1[_g];
+	while(_g < seq.length) {
+		var val = seq[_g];
 		++_g;
-		if((code & n) == 0) {
-			continue;
+		result[seq.length - i] = val;
+		++i;
+	}
+	return result;
+};
+champuru_Champuru.diff = function(a,b,shift) {
+	var length = a.length;
+	var this1 = new Array(length);
+	var result = this1;
+	var _g1 = 0;
+	var _g = a.length;
+	while(_g1 < _g) {
+		var i = _g1++;
+		var a_ = a[i];
+		var b_ = i + shift >= 0 && i + shift < b.length ? b[i + shift] : 0;
+		if(b_ == 0) {
+			result[i] = a_;
+		} else {
+			result[i] = a_ & b_;
 		}
 	}
-	return code;
+	return result;
+};
+champuru_Champuru.minus = function(orig,cons,idx) {
+	var origCorr = idx < 0 ? -idx : 0;
+	var length = cons.length;
+	var this1 = new Array(length);
+	var result = this1;
+	var _g1 = 0;
+	var _g = cons.length;
+	while(_g1 < _g) {
+		var i = _g1++;
+		var a = orig[i + origCorr];
+		var b = cons[i];
+		if(a == b && (a == 1 || a == 2 || a == 4 || a == 8)) {
+			result[i] = a;
+		} else if(a == b) {
+			result[i] = a;
+		} else {
+			result[i] = a - b;
+		}
+		if(result[i] < 0) {
+			throw new js__$Boot_HaxeError("Self-check failed. There is something is wrong here! It would be nice if you could send your sequences to jflot@ulb.ac.be so that we may fix this problem.");
+		}
+	}
+	return result;
 };
 champuru_Champuru.reconstructSeq = function(fwd,rev,sequenceA,sequenceB,i,j) {
-	var a = champuru_Champuru.toInts(sequenceA);
-	var b = champuru_Champuru.toInts(sequenceB);
-	var expected1 = champuru_Champuru.getPart(fwd,rev,i);
-	var expected2 = champuru_Champuru.getPart(fwd,rev,j);
-	var found = true;
-	while(found) {
-		found = false;
-		var _g1 = 0;
-		var _g = a.length;
-		while(_g1 < _g) {
-			var pos = _g1++;
-			var valAtCurPos = a[pos];
-			if((valAtCurPos & valAtCurPos - 1) == 0) {
-				continue;
-			}
-			var res = champuru_Champuru.check(a,b,pos,i,j,expected1,expected2);
-			if(res != a[pos]) {
-				a[pos] = res;
-				found = true;
-			}
+	var fwd_ = champuru_Champuru.toInts(fwd);
+	var rev_ = champuru_Champuru.toInts(rev);
+	var a_ = champuru_Champuru.toInts(sequenceA);
+	var b_ = champuru_Champuru.toInts(sequenceB);
+	var restF = champuru_Champuru.minus(fwd_,a_,i);
+	var restR = champuru_Champuru.minus(rev_,b_,-j);
+	var shift = i - j;
+	var ashift = 0;
+	var bshift = 0;
+	if(i > 0) {
+		if(j > 0) {
+			ashift = shift;
+			bshift = 0;
+		} else {
+			ashift = 0;
+			bshift = shift;
 		}
-		var _g11 = 0;
-		var _g2 = b.length;
-		while(_g11 < _g2) {
-			var pos1 = _g11++;
-			var valAtCurPos1 = b[pos1];
-			if((valAtCurPos1 & valAtCurPos1 - 1) == 0) {
-				continue;
-			}
-			var res1 = champuru_Champuru.check(b,a,pos1,i,j,expected1,expected2);
-			if(res1 != b[pos1]) {
-				b[pos1] = res1;
-				found = true;
-			}
-		}
+	} else if(j > 0) {
+		ashift = shift;
+		bshift = 0;
+	} else {
+		ashift = 0;
+		bshift = shift;
 	}
-	return { a : champuru_Champuru.toString(a), b : champuru_Champuru.toString(b)};
+	var reconstructedA_ = champuru_Champuru.diff(a_,restR,ashift);
+	var reconstructedB_ = champuru_Champuru.diff(b_,restF,bshift);
+	var rAA = "";
+	if(champuru_Champuru.countProblems(champuru_Champuru.toString(champuru_Champuru.diff(a_,restR,0))) == 0) {
+		rAA += "0,";
+	}
+	if(champuru_Champuru.countProblems(champuru_Champuru.toString(champuru_Champuru.diff(a_,restR,shift))) == 0) {
+		rAA += "shift,";
+	}
+	if(champuru_Champuru.countProblems(champuru_Champuru.toString(champuru_Champuru.diff(a_,restR,-shift))) == 0) {
+		rAA += "neg.shift,";
+	}
+	var rBB = "";
+	if(champuru_Champuru.countProblems(champuru_Champuru.toString(champuru_Champuru.diff(b_,restF,0))) == 0) {
+		rBB += "0,";
+	}
+	if(champuru_Champuru.countProblems(champuru_Champuru.toString(champuru_Champuru.diff(b_,restF,shift))) == 0) {
+		rBB += "shift,";
+	}
+	if(champuru_Champuru.countProblems(champuru_Champuru.toString(champuru_Champuru.diff(b_,restF,-shift))) == 0) {
+		rBB += "neg.shift,";
+	}
+	console.log("" + Std.string(i > 0) + " " + Std.string(j > 0) + " " + Std.string(shift > 0) + " = " + rAA + " | " + rBB);
+	var recA = champuru_Champuru.toString(reconstructedA_);
+	var recB = champuru_Champuru.toString(reconstructedB_);
+	if(recA != sequenceA || recB != sequenceB) {
+		return champuru_Champuru.reconstructSeq(fwd,rev,recA,recB,i,j);
+	}
+	return { a : recA, b : recB};
 };
 champuru_Champuru.genScorePlot = function(scores,high,low) {
 	var result = new List();
@@ -360,10 +404,10 @@ champuru_Champuru.genScorePlotHist = function(scores,high,low) {
 	result.add("</svg>");
 	return result.join("");
 };
-champuru_Champuru.doChampuru = function(fwd,rev,old) {
+champuru_Champuru.doChampuru = function(fwd,rev,scoreCalculationMethod) {
 	champuru_Champuru.mMsgs.clear();
 	var timestamp1 = new Date().getTime() / 1000;
-	var scores = champuru_Champuru.calcOverlapScores(fwd,rev,old);
+	var scores = champuru_Champuru.calcOverlapScores(fwd,rev,scoreCalculationMethod);
 	var timestamp2 = new Date().getTime() / 1000;
 	var sortedScores = scores.slice();
 	sortedScores.sort(function(a,b) {
@@ -374,8 +418,7 @@ champuru_Champuru.doChampuru = function(fwd,rev,old) {
 	sortedScores.push(lowestScore);
 	champuru_Champuru.mMsgs.add("<fieldset>");
 	champuru_Champuru.mMsgs.add("<legend>1. Step - Compatibility score calculation</legend>");
-	var s = "<p>Calculated " + scores.length + " compatibility scores in " + champuru_Champuru.timeToStr(timestamp2 - timestamp1) + "ms. Sorting took " + champuru_Champuru.timeToStr(timestamp3 - timestamp2) + "ms.</p>";
-	champuru_Champuru.mMsgs.add(s);
+	champuru_Champuru.mMsgs.add("<p>Calculated " + scores.length + " compatibility scores in " + ("" + Math.round((timestamp2 - timestamp1) * 1000)) + "ms. Sorting took " + ("" + Math.round((timestamp3 - timestamp2) * 1000)) + "ms.</p>");
 	champuru_Champuru.mMsgs.add("<p>The following table lists the best compatibility scores and their positions:</p>");
 	champuru_Champuru.mMsgs.add("<table class='scoreTable center'>");
 	champuru_Champuru.mMsgs.add("<tr class='header'>");
@@ -396,12 +439,12 @@ champuru_Champuru.doChampuru = function(fwd,rev,old) {
 	}
 	champuru_Champuru.mMsgs.add("</table>");
 	champuru_Champuru.mMsgs.add("<p>Here is a plot of the shift calculation result:</p>");
-	var s1 = champuru_Champuru.genScorePlot(scores,sortedScores[0].score,lowestScore.score);
-	champuru_Champuru.mMsgs.add(s1);
+	var s = champuru_Champuru.genScorePlot(scores,sortedScores[0].score,lowestScore.score);
+	champuru_Champuru.mMsgs.add(s);
 	champuru_Champuru.mMsgs.add("<p>Warning: Close points may be overlapping!</p>");
 	champuru_Champuru.mMsgs.add("<p>And as histogram:</p>");
-	var s2 = champuru_Champuru.genScorePlotHist(scores,sortedScores[0].score,lowestScore.score);
-	champuru_Champuru.mMsgs.add(s2);
+	var s1 = champuru_Champuru.genScorePlotHist(scores,sortedScores[0].score,lowestScore.score);
+	champuru_Champuru.mMsgs.add(s1);
 	champuru_Champuru.mMsgs.add("</fieldset>");
 	champuru_Champuru.mMsgs.add("<br>");
 	var sequenceA = champuru_Champuru.reconstruct(fwd,rev,sortedScores[0].index);
@@ -449,8 +492,7 @@ champuru_Champuru.doChampuru = function(fwd,rev,old) {
 	var ambPos = champuru_Champuru.countAmb(reconstruction.a) + champuru_Champuru.countAmb(reconstruction.b);
 	champuru_Champuru.mMsgs.add("<fieldset>");
 	champuru_Champuru.mMsgs.add("<legend>3. Step - Sequence reconstruction</legend>");
-	var s3 = "<p>Cleaning up ambiguities by sequence comparison took " + champuru_Champuru.timeToStr(timestamp5 - timestamp4) + "ms.</p>";
-	champuru_Champuru.mMsgs.add(s3);
+	champuru_Champuru.mMsgs.add("<p>Cleaning up ambiguities by sequence comparison took " + ("" + Math.round((timestamp5 - timestamp4) * 1000)) + "ms.</p>");
 	champuru_Champuru.mMsgs.add("<p>First reconstructed sequence: <span id='reconstructed1' class='sequence'>");
 	champuru_Champuru.mMsgs.add(reconstruction.a);
 	champuru_Champuru.mMsgs.add("</span></p>");
@@ -476,14 +518,14 @@ champuru_Champuru.doChampuru = function(fwd,rev,old) {
 		champuru_Champuru.mMsgs.add("<span class='middle'><button onclick='colorAmbPos()'>Color ambigiouties</button><button onclick='removeColorFinal()'>Remove color</button></span>");
 	}
 	champuru_Champuru.mMsgs.add("</fieldset>");
-	return champuru_Champuru.mMsgs.join("");
+	return { result : champuru_Champuru.mMsgs.join(""), problematicPositions : problems};
 };
 champuru_Champuru.onMessage = function(e) {
 	try {
 		var fwd = js_Boot.__cast(e.data.fwd , String);
 		var rev = js_Boot.__cast(e.data.rev , String);
-		var old = js_Boot.__cast(e.data.old , Bool);
-		var result = champuru_Champuru.doChampuru(fwd,rev,old);
+		var scoreCalculationMethod = js_Boot.__cast(e.data.score , Int);
+		var result = champuru_Champuru.doChampuru(fwd,rev,scoreCalculationMethod);
 		champuru_Champuru.workerScope.postMessage(result);
 	} catch( e1 ) {
 		if (e1 instanceof js__$Boot_HaxeError) e1 = e1.val;
@@ -522,6 +564,12 @@ haxe_ds_StringMap.prototype = {
 		} else {
 			return this.rh["$" + key];
 		}
+	}
+	,existsReserved: function(key) {
+		if(this.rh == null) {
+			return false;
+		}
+		return this.rh.hasOwnProperty("$" + key);
 	}
 	,__class__: haxe_ds_StringMap
 };
