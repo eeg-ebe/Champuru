@@ -126,8 +126,8 @@ function checkInput(s) {
 }
 
 function calculate() {
-    var fwd = document.getElementById('forward').value;
-    var rev = document.getElementById('reverse').value;
+    var fwd = document.getElementById('forward').value.trim().toUpperCase();
+    var rev = document.getElementById('reverse').value.trim().toUpperCase();
     var old = document.getElementById('old').checked;
 
     if (fwd == "") {
