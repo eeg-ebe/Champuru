@@ -53,7 +53,7 @@
                     <td>
                         <select id="score" autocomplete="off">
                             <option value="0">Paper</option>
-                            <option value="1" selected="selected">Ambigiousity correction</option>
+                            <option value="1" selected="selected">Ambiguity correction</option>
                             <option value="2">Longest length</option>
                         </select>
                     </td>
@@ -66,9 +66,9 @@
                                 <td valign="top">Paper</td><td valign="top">The score correction method described in the Champuru 1.0 paper.</td>
                             </tr>
                             <tr class="odd">
-                                <td valign="top">Ambigiousity correction</td><td valign="top">A modification of the score correction method described in the Champuru 1.0 paper.
-The score will get corrected for the fact that ambigious characters (e.g. W) can match multiple other characters (e.g. A, T).
-Preliminary results suggests that this score calculation method works better when the reconstructed consensus sequences contain a lot of ambigiouties.
+                                <td valign="top">Ambiguity correction</td><td valign="top">A modification of the score correction method described in the Champuru 1.0 paper.
+The score will get corrected for the fact that ambiguous characters (e.g. W) can match multiple other characters (e.g. A, T).
+Preliminary results suggests that this score calculation method works better when the reconstructed consensus sequences contain a lot of ambiguities.
 However this score correction method seems to work less good on short input sequences.
 </td>
                             </tr>
@@ -96,14 +96,14 @@ However this score correction method seems to work less good on short input sequ
                 </div>
                 <br>
                 <div class="noindent">
-                    This example may be used in order to explain how Champuru can resolve ambigiouties in the consensus sequences (Step 3):<br>
+                    This example may be used in order to explain how Champuru can resolve ambiguities in the consensus sequences (Step 3):<br>
                     Forward sequence: <span class="sequence" id="example2forward">CTRAATTCAAATCACACTCGCGAAAWYMWKRAA</span><br>
                     Reverse sequence: <span class="sequence" id="example2reverse">YWRAWTYMAAWYMMMMYYSSSRAAATCATGAA</span><br>
                     <button href="#" onclick="load(2)">Copy data to input fields</button><br>
                 </div>
                 <br>
                 <div class="noindent">
-                    A more complex example with lots of ambigiouties in the consensus sequence:<br>
+                    A more complex example with lots of ambiguities in the consensus sequence:<br>
                     Forward sequence: <span class="sequence" id="example3forward">AAATSSYKRWTYMMMMMRSSRMSGSCCYWRSMWWMCCSRRGGRWYSGRARR</span><br>
                     Reverse sequence: <span class="sequence" id="example3reverse">MRMTGMTKMWYMMMRCRRCGRCSSYMSYAKMMYMSMSGRRKSRKMRGRRKA</span><br>
                     <button href="#" onclick="load(3)">Copy data to input fields</button><br>

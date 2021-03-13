@@ -310,7 +310,8 @@ if (countProblems(toString(diff(b_, restF, -shift))) == 0) {
     rBB += "neg.shift,";
 }
 
-trace("" + (i > 0) + " " + (j > 0) + " " + (shift > 0) + " = " + rAA + " | " + rBB);
+
+trace("" + (i > 0) + " " + (i == 0) + " " + (j > 0) + " " + (j == 0) + " " + (shift > 0) + " " + (shift == 0) + " = " + rAA + " | " + rBB + " =");
 */
 
         var recA:String = toString(reconstructedA_);
@@ -505,17 +506,17 @@ trace("" + (i > 0) + " " + (j > 0) + " " + (shift > 0) + " = " + rAA + " | " + r
             out("<span class='middle'><button onclick='colorConsensusByIncompatiblePositions()'>Color underscores</button><button onclick='removeColor()'>Remove color</button></span>");
         }
         if (remainingAmbFwd == 1) {
-            out("<p>There is 1 ambigiouty in the first consensus sequence.</p>");
+            out("<p>There is 1 ambiguity in the first consensus sequence.</p>");
         } else if (remainingAmbFwd > 1) {
-            out("<p>There are " + remainingAmbFwd + " ambigiouties in the first consensus sequence.</p>");
+            out("<p>There are " + remainingAmbFwd + " ambiguities in the first consensus sequence.</p>");
         }
         if (remainingAmbRev == 1) {
-            out("<p>There is 1 ambigiouty in the second consensus sequence.</p>");
+            out("<p>There is 1 ambiguity in the second consensus sequence.</p>");
         } else if (remainingAmbRev > 1) {
-            out("<p>There are " + remainingAmbRev + " ambigiouties in the second consensus sequence.</p>");
+            out("<p>There are " + remainingAmbRev + " ambiguities in the second consensus sequence.</p>");
         }
         if (remainingAmbFwd + remainingAmbRev > 0) {
-            out("<span class='middle'><button onclick='colorConsensusByAmbPositions()'>Color ambigiouties</button><button onclick='removeColor()'>Remove color</button></span>");
+            out("<span class='middle'><button onclick='colorConsensusByAmbPositions()'>Color ambiguities</button><button onclick='removeColor()'>Remove color</button></span>");
         }
         out("</fieldset>");
         out("<br>");
@@ -546,18 +547,20 @@ trace("" + (i > 0) + " " + (j > 0) + " " + (shift > 0) + " = " + rAA + " | " + r
             out("<span class='middle'><button onclick='colorProblems()'>Color problems</button><button onclick='removeColorFinal()'>Remove color</button></span>");
         }
         if (ambPos == 1) {
-            out("<p>There is 1 ambigiouty left!</p>");
+            out("<p>There is 1 ambiguity left!</p>");
         } else if (ambPos > 1) {
-            out("<p>There are " + ambPos + " ambigiouties left!</p>");
+            out("<p>There are " + ambPos + " ambiguities left!</p>");
         }
         if (ambPos > 0) {
-            out("<span class='middle'><button onclick='colorAmbPos()'>Color ambigiouties</button><button onclick='removeColorFinal()'>Remove color</button></span>");
+            out("<span class='middle'><button onclick='colorAmbPos()'>Color ambiguities</button><button onclick='removeColorFinal()'>Remove color</button></span>");
         }
         out("</fieldset>");
 
         return {
             result : mMsgs.join(""),
-            problematicPositions : problems
+            problematicPositions : problems,
+            iOffset : iOffset,
+            jOffset : jOffset,
         };
     }
 
