@@ -395,7 +395,7 @@ trace("" + (i > 0) + " " + (j > 0) + " " + (shift > 0) + " = " + rAA + " | " + r
         return result.join("");
     }
 
-    public static function doChampuru(fwd:String, rev:String, scoreCalculationMethod:Int) {
+    public static function doChampuru(fwd:String, rev:String, scoreCalculationMethod:Int, iOffset:Int, jOffset:Int, useThisOffsets:Bool) {
         mMsgs.clear();
 
         var timestamp1:Float = Timer.stamp();
@@ -416,6 +416,11 @@ trace("" + (i > 0) + " " + (j > 0) + " " + (shift > 0) + " = " + rAA + " | " + r
         var lowestScore:{nr:Int, index:Int, score:Float, matches:Int, mismatches:Int} = sortedScores.pop();
         sortedScores.push(lowestScore);
 
+        if (!useThisOffsets) {
+            iOffset = sortedScores[0].index;
+            jOffset = sortedScores[1].index;
+        }
+
         var sortedScoresStringList:List<String> = new List<String>();
         sortedScoresStringList.add("#\tOffset\tScore\tMatches\tMismatches");
         var i:Int = 1;
@@ -425,6 +430,20 @@ trace("" + (i > 0) + " " + (j > 0) + " " + (shift > 0) + " = " + rAA + " | " + r
         }
         var sortedScoresString:String = sortedScoresStringList.join("\n");
         var sortedScoresStringB64:String = Base64.encode(Bytes.ofString(sortedScoresString)); //ofString returns UTF-8 encoded string, which is ok
+
+        out("<fieldset>");
+        out("<legend>Input</legend>");
+        out("<p>Forward sequence of length " + (fwd.length) + ": <span class='sequence'>");
+        out(fwd);
+        out("</p><p>Reverse sequence of length " + (rev.length) + ": <span class='sequence'>");
+        out(rev);
+        out("</p>");
+        out("<p>Score calculation method: " + scoreCalculationMethod + "</p>");
+        if (useThisOffsets) {
+            out("<p>Offsets to use: " + iOffset + " and " + jOffset + "</p>");
+        }
+        out("</fieldset>");
+        out("<br>");
 
         out("<fieldset>");
         out("<legend>1. Step - Compatibility score calculation</legend>");
@@ -450,11 +469,17 @@ trace("" + (i > 0) + " " + (j > 0) + " " + (shift > 0) + " = " + rAA + " | " + r
         out("<p>Warning: Close points may be overlapping!</p>");
         out("<p>And as histogram:</p>");
         out(genScorePlotHist(scores, sortedScores[0].score, lowestScore.score));
+        if (useThisOffsets) {
+            out("<p>User requested to use the offsets " + iOffset + " and " + jOffset + " for calculation.</p>");
+        } else {
+            out("<p>Using offsets " + iOffset + " and " + jOffset + " for calculation.</p>");
+        }
+        out("<span class='middle'><button onclick='rerunAnalysisWithDifferentOffsets(\"" + fwd + "\", \"" + rev + "\", " + scoreCalculationMethod + ")'>Use different offsets</button></span>");
         out("</fieldset>");
         out("<br>");
 
-        var sequenceA:String = reconstruct(fwd, rev, sortedScores[0].index);
-        var sequenceB:String = reconstruct(fwd, rev, sortedScores[1].index);
+        var sequenceA:String = reconstruct(fwd, rev, iOffset);
+        var sequenceB:String = reconstruct(fwd, rev, jOffset);
 
         var problemsFwd:Int = countProblems(sequenceA);
         var problemsRev:Int = countProblems(sequenceB);
@@ -472,9 +497,9 @@ trace("" + (i > 0) + " " + (j > 0) + " " + (shift > 0) + " = " + rAA + " | " + r
         out(sequenceB);
         out("</span></p>");
         if (problems == 1) {
-            out("<p>There is 1 incompatible position (indicated with an underscore), please check the input sequences.");
+            out("<p>There is 1 incompatible position (indicated with an underscore), please check the input sequences.</p>");
         } else if (problems > 1) {
-            out("<p>There are " + problems + " incompatible positions (indicated with underscores), please check the input sequences.");
+            out("<p>There are " + problems + " incompatible positions (indicated with underscores), please check the input sequences.</p>");
         }
         if (problems > 0) {
             out("<span class='middle'><button onclick='colorConsensusByIncompatiblePositions()'>Color underscores</button><button onclick='removeColor()'>Remove color</button></span>");
@@ -496,7 +521,7 @@ trace("" + (i > 0) + " " + (j > 0) + " " + (shift > 0) + " = " + rAA + " | " + r
         out("<br>");
 
         var timestamp4:Float = Timer.stamp();
-        var reconstruction:{a:String, b:String} = reconstructSeq(fwd, rev, sequenceA, sequenceB, sortedScores[0].index, sortedScores[1].index);
+        var reconstruction:{a:String, b:String} = reconstructSeq(fwd, rev, sequenceA, sequenceB, iOffset, jOffset);
         var timestamp5:Float = Timer.stamp();
         problems = countProblems(reconstruction.a) + countProblems(reconstruction.b);
         var ambPos:Int = countAmb(reconstruction.a) + countAmb(reconstruction.b);
@@ -544,7 +569,10 @@ trace("" + (i > 0) + " " + (j > 0) + " " + (shift > 0) + " = " + rAA + " | " + r
             var fwd:String = cast(e.data.fwd, String);
             var rev:String = cast(e.data.rev, String);
             var scoreCalculationMethod:Int = cast(e.data.score, Int);
-            var result = doChampuru(fwd, rev, scoreCalculationMethod);
+            var i:Int = cast(e.data.i, Int);
+            var j:Int = cast(e.data.j, Int);
+            var use:Bool = cast(e.data.useOffsets, Bool);
+            var result = doChampuru(fwd, rev, scoreCalculationMethod, i, j, use);
             workerScope.postMessage(result);
         } catch(e:Dynamic) {
             workerScope.postMessage("The following error occurred: " + e);

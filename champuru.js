@@ -426,7 +426,7 @@ champuru_Champuru.genScorePlotHist = function(scores,high,low) {
 	result.add("</svg>");
 	return result.join("");
 };
-champuru_Champuru.doChampuru = function(fwd,rev,scoreCalculationMethod) {
+champuru_Champuru.doChampuru = function(fwd,rev,scoreCalculationMethod,iOffset,jOffset,useThisOffsets) {
 	champuru_Champuru.mMsgs.clear();
 	var timestamp1 = new Date().getTime() / 1000;
 	var scores = champuru_Champuru.calcOverlapScores(fwd,rev,scoreCalculationMethod);
@@ -444,6 +444,10 @@ champuru_Champuru.doChampuru = function(fwd,rev,scoreCalculationMethod) {
 	var timestamp3 = new Date().getTime() / 1000;
 	var lowestScore = sortedScores.pop();
 	sortedScores.push(lowestScore);
+	if(!useThisOffsets) {
+		iOffset = sortedScores[0].index;
+		jOffset = sortedScores[1].index;
+	}
 	var sortedScoresStringList = new List();
 	sortedScoresStringList.add("#\tOffset\tScore\tMatches\tMismatches");
 	var i = 1;
@@ -456,6 +460,19 @@ champuru_Champuru.doChampuru = function(fwd,rev,scoreCalculationMethod) {
 	}
 	var sortedScoresString = sortedScoresStringList.join("\n");
 	var sortedScoresStringB64 = haxe_crypto_Base64.encode(haxe_io_Bytes.ofString(sortedScoresString));
+	champuru_Champuru.mMsgs.add("<fieldset>");
+	champuru_Champuru.mMsgs.add("<legend>Input</legend>");
+	champuru_Champuru.mMsgs.add("<p>Forward sequence of length " + fwd.length + ": <span class='sequence'>");
+	champuru_Champuru.mMsgs.add(fwd);
+	champuru_Champuru.mMsgs.add("</p><p>Reverse sequence of length " + rev.length + ": <span class='sequence'>");
+	champuru_Champuru.mMsgs.add(rev);
+	champuru_Champuru.mMsgs.add("</p>");
+	champuru_Champuru.mMsgs.add("<p>Score calculation method: " + scoreCalculationMethod + "</p>");
+	if(useThisOffsets) {
+		champuru_Champuru.mMsgs.add("<p>Offsets to use: " + iOffset + " and " + jOffset + "</p>");
+	}
+	champuru_Champuru.mMsgs.add("</fieldset>");
+	champuru_Champuru.mMsgs.add("<br>");
 	champuru_Champuru.mMsgs.add("<fieldset>");
 	champuru_Champuru.mMsgs.add("<legend>1. Step - Compatibility score calculation</legend>");
 	champuru_Champuru.mMsgs.add("<p>Calculated " + scores.length + " compatibility scores in " + ("" + Math.round((timestamp2 - timestamp1) * 1000)) + "ms. Sorting took " + ("" + Math.round((timestamp3 - timestamp2) * 1000)) + "ms.</p>");
@@ -487,10 +504,16 @@ champuru_Champuru.doChampuru = function(fwd,rev,scoreCalculationMethod) {
 	champuru_Champuru.mMsgs.add("<p>And as histogram:</p>");
 	var s1 = champuru_Champuru.genScorePlotHist(scores,sortedScores[0].score,lowestScore.score);
 	champuru_Champuru.mMsgs.add(s1);
+	if(useThisOffsets) {
+		champuru_Champuru.mMsgs.add("<p>User requested to use the offsets " + iOffset + " and " + jOffset + " for calculation.</p>");
+	} else {
+		champuru_Champuru.mMsgs.add("<p>Using offsets " + iOffset + " and " + jOffset + " for calculation.</p>");
+	}
+	champuru_Champuru.mMsgs.add("<span class='middle'><button onclick='rerunAnalysisWithDifferentOffsets(\"" + fwd + "\", \"" + rev + "\", " + scoreCalculationMethod + ")'>Use different offsets</button></span>");
 	champuru_Champuru.mMsgs.add("</fieldset>");
 	champuru_Champuru.mMsgs.add("<br>");
-	var sequenceA = champuru_Champuru.reconstruct(fwd,rev,sortedScores[0].index);
-	var sequenceB = champuru_Champuru.reconstruct(fwd,rev,sortedScores[1].index);
+	var sequenceA = champuru_Champuru.reconstruct(fwd,rev,iOffset);
+	var sequenceB = champuru_Champuru.reconstruct(fwd,rev,jOffset);
 	var problemsFwd = champuru_Champuru.countProblems(sequenceA);
 	var problemsRev = champuru_Champuru.countProblems(sequenceB);
 	var problems = problemsFwd + problemsRev;
@@ -505,9 +528,9 @@ champuru_Champuru.doChampuru = function(fwd,rev,scoreCalculationMethod) {
 	champuru_Champuru.mMsgs.add(sequenceB);
 	champuru_Champuru.mMsgs.add("</span></p>");
 	if(problems == 1) {
-		champuru_Champuru.mMsgs.add("<p>There is 1 incompatible position (indicated with an underscore), please check the input sequences.");
+		champuru_Champuru.mMsgs.add("<p>There is 1 incompatible position (indicated with an underscore), please check the input sequences.</p>");
 	} else if(problems > 1) {
-		champuru_Champuru.mMsgs.add("<p>There are " + problems + " incompatible positions (indicated with underscores), please check the input sequences.");
+		champuru_Champuru.mMsgs.add("<p>There are " + problems + " incompatible positions (indicated with underscores), please check the input sequences.</p>");
 	}
 	if(problems > 0) {
 		champuru_Champuru.mMsgs.add("<span class='middle'><button onclick='colorConsensusByIncompatiblePositions()'>Color underscores</button><button onclick='removeColor()'>Remove color</button></span>");
@@ -528,7 +551,7 @@ champuru_Champuru.doChampuru = function(fwd,rev,scoreCalculationMethod) {
 	champuru_Champuru.mMsgs.add("</fieldset>");
 	champuru_Champuru.mMsgs.add("<br>");
 	var timestamp4 = new Date().getTime() / 1000;
-	var reconstruction = champuru_Champuru.reconstructSeq(fwd,rev,sequenceA,sequenceB,sortedScores[0].index,sortedScores[1].index);
+	var reconstruction = champuru_Champuru.reconstructSeq(fwd,rev,sequenceA,sequenceB,iOffset,jOffset);
 	var timestamp5 = new Date().getTime() / 1000;
 	problems = champuru_Champuru.countProblems(reconstruction.a) + champuru_Champuru.countProblems(reconstruction.b);
 	var ambPos = champuru_Champuru.countAmb(reconstruction.a) + champuru_Champuru.countAmb(reconstruction.b);
@@ -567,7 +590,10 @@ champuru_Champuru.onMessage = function(e) {
 		var fwd = js_Boot.__cast(e.data.fwd , String);
 		var rev = js_Boot.__cast(e.data.rev , String);
 		var scoreCalculationMethod = js_Boot.__cast(e.data.score , Int);
-		var result = champuru_Champuru.doChampuru(fwd,rev,scoreCalculationMethod);
+		var i = js_Boot.__cast(e.data.i , Int);
+		var j = js_Boot.__cast(e.data.j , Int);
+		var $use = js_Boot.__cast(e.data.useOffsets , Bool);
+		var result = champuru_Champuru.doChampuru(fwd,rev,scoreCalculationMethod,i,j,$use);
 		champuru_Champuru.workerScope.postMessage(result);
 	} catch( e1 ) {
 		if (e1 instanceof js__$Boot_HaxeError) e1 = e1.val;

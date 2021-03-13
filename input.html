@@ -183,7 +183,35 @@ function calculate() {
         data = e.data;
         resultArea.innerHTML = data.result;
     });
-    worker.postMessage({"fwd" : fwd, "rev" : rev, "score" : score});
+    worker.postMessage({"fwd" : fwd, "rev" : rev, "score" : score, "i" : 0, "j" : 0, "useOffsets" : false});
+}
+
+function askForOffset(title, fwd, rev) {
+    var input = prompt(title);
+    if (input == null || input == undefined) return NaN; // Cancel button
+    var i = parseInt(input.trim());
+    if (i == NaN) {
+        alert("Invalid input!");
+        return NaN;
+    }
+    if (!(-fwd.length + 1 <= i && i < rev.length)) {
+        alert("Invalid offset for input sequences!");
+        return NaN;
+    }
+    return i;
+}
+function rerunAnalysisWithDifferentOffsets(fwd, rev, method) {
+    var i = askForOffset("Please enter first offset:", fwd, rev);
+    if (isNaN(i)) return;
+    var j = askForOffset("Please enter second offset:", fwd, rev);
+    if (isNaN(j)) return;
+
+    var worker = new Worker("champuru.js");
+    worker.addEventListener("message", function(e) {
+        data = e.data;
+        resultArea.innerHTML = data.result;
+    });
+    worker.postMessage({"fwd" : fwd, "rev" : rev, "score" : method, "i" : i, "j" : j, "useOffsets" : true});
 }
 
 function resetForm() {
@@ -311,38 +339,6 @@ function removeHighlight(id) {
     var svg = document.getElementById("scorePlot");
     var circle = document.getElementById("addedCircle");
     svg.removeChild(circle);
-}
-
-function checkSingle(a, b) {
-    var worker = new Worker("champuru.js");
-    worker.addEventListener("message", function(e) {
-        data = e.data;
-        if (data.problematicPositions > 0) {
-            console.log("NOT OK for " + a + ", " + b)
-        }
-        resultArea.innerHTML = data.result;
-    });
-    worker.postMessage({"fwd" : a, "rev" : b, "score" : 1});
-}
-function check(a, b) {
-    checkSingle(a, b);
-    checkSingle(b, a);
-//    var ra = reverse(a);
-//    var rb = reverse(b);
-//    checkSingle(ra, rb);
-//    checkSingle(rb, ra);
-}
-function selfCheck() {
-    for (var i = 1; i <= 4; i++) {
-        var f = document.getElementById("example" + i + "forward").innerText;
-        var r = document.getElementById("example" + i + "reverse").innerText;
-        check(f, r);
-    }
-    check("GCMYKSMM", "SCWSYRMC");
-    check("SMMYKSMA", "MMYKSMAM");
-    check("MMYKSMAMCCCCCC", "AAAAASMMYKSMA");
-    check("AGGGCCCCTCCGCCTAGAAAGTGCTTCTCGCAACTACAACTCGCCGATGCAGGCATCGGAGATTTCAAATTTGAGCTCTTCCCGCTTC", "YCTSYGMSRYGYSSYKYYMMRMRMMWYWKRSRSRGSSCCYCYSCSYMKARARWGYKYYTCKCRMMWMYAMMWCKCSSMKRYRSRSRYM");
-    check("AAATSSYKRWTYMMMMMRSSRMSGSCCYWRSMWWMCCSRRGGRWYSGRARR", "MRMTGMTKMWYMMMRCRRCGRCSSYMSYAKMMYMSMSGRRKSRKMRGRRKA");
 }
 
         </script>
