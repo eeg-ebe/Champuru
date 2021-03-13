@@ -182,6 +182,7 @@ function calculate() {
     worker.addEventListener("message", function(e) {
         data = e.data;
         resultArea.innerHTML = data.result;
+        worker.terminate();
     });
     worker.postMessage({"fwd" : fwd, "rev" : rev, "score" : score, "i" : 0, "j" : 0, "useOffsets" : false});
 }
@@ -210,6 +211,7 @@ function rerunAnalysisWithDifferentOffsets(fwd, rev, method) {
     worker.addEventListener("message", function(e) {
         data = e.data;
         resultArea.innerHTML = data.result;
+        worker.terminate();
     });
     worker.postMessage({"fwd" : fwd, "rev" : rev, "score" : method, "i" : i, "j" : j, "useOffsets" : true});
 }
