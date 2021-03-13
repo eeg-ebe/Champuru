@@ -15,9 +15,13 @@
  */
 package champuru;
 
+import haxe.crypto.Base64;
+
 import haxe.ds.IntMap;
 import haxe.ds.StringMap;
 import haxe.ds.Vector;
+
+import haxe.io.Bytes;
 
 import haxe.Timer;
 
@@ -412,10 +416,22 @@ trace("" + (i > 0) + " " + (j > 0) + " " + (shift > 0) + " = " + rAA + " | " + r
         var lowestScore:{nr:Int, index:Int, score:Float, matches:Int, mismatches:Int} = sortedScores.pop();
         sortedScores.push(lowestScore);
 
+        var sortedScoresStringList:List<String> = new List<String>();
+        sortedScoresStringList.add("#\tOffset\tScore\tMatches\tMismatches");
+        var i:Int = 1;
+        for (score in sortedScores) {
+            sortedScoresStringList.add(i + "\t" + score.index + "\t" + score.score + "\t" + score.matches + "\t" + score.mismatches);
+            i++;
+        }
+        var sortedScoresString:String = sortedScoresStringList.join("\n");
+        var sortedScoresStringB64:String = Base64.encode(Bytes.ofString(sortedScoresString)); //ofString returns UTF-8 encoded string, which is ok
+
         out("<fieldset>");
         out("<legend>1. Step - Compatibility score calculation</legend>");
         out("<p>Calculated " + scores.length + " compatibility scores in " + timeToStr(timestamp2 - timestamp1) + "ms. Sorting took " + timeToStr(timestamp3 - timestamp2) + "ms.</p>");
-        out("<p>The following table lists the best compatibility scores and their positions:</p>");
+        out("<p>The following table [<a href-lang='text/tsv' title='table.tsv' href='data:text/tsv;base64,\n");
+        out(sortedScoresStringB64);
+        out("' title='table.tsv' download='table.tsv'>Download</a>] lists the best compatibility scores and their positions:</p>");
         out("<table class='scoreTable center'>");
         out("<tr class='header'>");
         out("<td>#</td><td>Offset</td><td>Score</td><td>Matches</td><td>Mismatches</td>");
