@@ -321,27 +321,6 @@ champuru_Champuru.reconstructSeq = function(fwd,rev,sequenceA,sequenceB,i,j) {
 	}
 	var reconstructedA_ = champuru_Champuru.diff(a_,restR,ashift);
 	var reconstructedB_ = champuru_Champuru.diff(b_,restF,bshift);
-	var rAA = "";
-	if(champuru_Champuru.countProblems(champuru_Champuru.toString(champuru_Champuru.diff(a_,restR,0))) == 0) {
-		rAA += "0,";
-	}
-	if(champuru_Champuru.countProblems(champuru_Champuru.toString(champuru_Champuru.diff(a_,restR,shift))) == 0) {
-		rAA += "shift,";
-	}
-	if(champuru_Champuru.countProblems(champuru_Champuru.toString(champuru_Champuru.diff(a_,restR,-shift))) == 0) {
-		rAA += "neg.shift,";
-	}
-	var rBB = "";
-	if(champuru_Champuru.countProblems(champuru_Champuru.toString(champuru_Champuru.diff(b_,restF,0))) == 0) {
-		rBB += "0,";
-	}
-	if(champuru_Champuru.countProblems(champuru_Champuru.toString(champuru_Champuru.diff(b_,restF,shift))) == 0) {
-		rBB += "shift,";
-	}
-	if(champuru_Champuru.countProblems(champuru_Champuru.toString(champuru_Champuru.diff(b_,restF,-shift))) == 0) {
-		rBB += "neg.shift,";
-	}
-	console.log("" + Std.string(i > 0) + " " + Std.string(j > 0) + " " + Std.string(shift > 0) + " = " + rAA + " | " + rBB);
 	var recA = champuru_Champuru.toString(reconstructedA_);
 	var recB = champuru_Champuru.toString(reconstructedB_);
 	if(recA != sequenceA || recB != sequenceB) {
@@ -444,11 +423,13 @@ champuru_Champuru.doChampuru = function(fwd,rev,scoreCalculationMethod) {
 	var timestamp2 = new Date().getTime() / 1000;
 	var sortedScores = scores.slice();
 	sortedScores.sort(function(a,b) {
-		var result = Math.ceil(b.score - a.score);
-		if(result != 0) {
-			return result;
+		var result = b.score - a.score;
+		if(result == 0) {
+			return a.mismatches - b.mismatches;
+		} else if(result > 0) {
+			return 1;
 		}
-		return a.mismatches - b.mismatches;
+		return -1;
 	});
 	var timestamp3 = new Date().getTime() / 1000;
 	var lowestScore = sortedScores.pop();

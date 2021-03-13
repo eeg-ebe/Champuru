@@ -283,6 +283,7 @@ class Champuru {
         var reconstructedA_:Vector<Int> = diff(a_, restR, ashift);
         var reconstructedB_:Vector<Int> = diff(b_, restF, bshift);
 
+/*
 var rAA = "";
 if (countProblems(toString(diff(a_, restR, 0))) == 0) {
     rAA += "0,";
@@ -306,6 +307,7 @@ if (countProblems(toString(diff(b_, restF, -shift))) == 0) {
 }
 
 trace("" + (i > 0) + " " + (j > 0) + " " + (shift > 0) + " = " + rAA + " | " + rBB);
+*/
 
         var recA:String = toString(reconstructedA_);
         var recB:String = toString(reconstructedB_);
@@ -397,11 +399,13 @@ trace("" + (i > 0) + " " + (j > 0) + " " + (shift > 0) + " = " + rAA + " | " + r
         var timestamp2:Float = Timer.stamp();
         var sortedScores:Array<{nr:Int, index:Int, score:Float, matches:Int, mismatches:Int}> = scores.copy();
         sortedScores.sort(function(a:{nr:Int, index:Int, score:Float, matches:Int, mismatches:Int}, b:{nr:Int, index:Int, score:Float, matches:Int, mismatches:Int}):Int {
-            var result:Int = Math.ceil(b.score - a.score);
-            if (result != 0) {
-                return result;
+            var result:Float = b.score - a.score;
+            if (result == 0) {
+                return a.mismatches - b.mismatches;
+            } else if (result > 0) {
+                return 1;
             }
-            return a.mismatches - b.mismatches;
+            return -1;
         });
         var timestamp3:Float = Timer.stamp();
         // hey why is there no function to get but not remove the last element of an array?
