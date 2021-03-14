@@ -315,13 +315,8 @@ champuru_Champuru.reconstructSeq = function(fwd,rev,sequenceA,sequenceB,i,j) {
 	var ashift = 0;
 	var bshift = 0;
 	if(i > 0) {
-		if(j > 0) {
-			ashift = shift;
-			bshift = 0;
-		} else {
-			ashift = 0;
-			bshift = shift;
-		}
+		ashift = shift;
+		bshift = 0;
 	} else if(j > 0) {
 		ashift = shift;
 		bshift = 0;

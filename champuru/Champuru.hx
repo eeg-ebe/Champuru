@@ -262,19 +262,27 @@ class Champuru {
     public static function reconstructSeq(fwd:String, rev:String, sequenceA:String, sequenceB:String, i:Int, j:Int):{a:String, b:String} {
         var fwd_:Vector<Int> = toInts(fwd), rev_:Vector<Int> = toInts(rev), a_:Vector<Int> = toInts(sequenceA), b_:Vector<Int> = toInts(sequenceB);
 
+//trace("=== " + i + ", " + j + " " + (-j));
+
         var restF:Vector<Int> = minus(fwd_, a_, i);
         var restR:Vector<Int> = minus(rev_, b_, -j);
+
+/*
+trace("-- " + i);
+trace("      " + fwd);
+trace("      " + sequenceA);
+trace("restF " + toString(restF));
+trace("--" + (-j));
+trace("      " + rev);
+trace("      " + sequenceB);
+trace("restR " + toString(restR));
+*/
 
         var shift:Int = i - j;
         var ashift:Int = 0, bshift:Int = 0;
         if (i > 0) {
-            if (j > 0) {
-                ashift = shift;
-                bshift = 0;
-            } else {
-                ashift = 0;
-                bshift = shift;
-            }
+            ashift = shift;
+            bshift = 0;
         } else {
             if (j > 0) {
                 ashift = shift;
@@ -288,6 +296,17 @@ class Champuru {
         var reconstructedB_:Vector<Int> = diff(b_, restF, bshift);
 
 /*
+trace("----- " + (i > 0) + " " + (i == 0) + " " + (j > 0) + " " + (j == 0) + " " + (shift > 0) + " " + (shift == 0) + " -----");
+
+trace("-- " + ashift + " --");
+trace("      " + sequenceA);
+trace("restR " + toString(restR));
+trace("      " + toString(reconstructedA_));
+trace("-- " + bshift + " --");
+trace("      " + sequenceB);
+trace("restF " + toString(restF));
+trace("      " + toString(reconstructedB_));
+
 var rAA = "";
 if (countProblems(toString(diff(a_, restR, 0))) == 0) {
     rAA += "0,";
