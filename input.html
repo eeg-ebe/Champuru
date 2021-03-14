@@ -304,11 +304,6 @@ function removeColorFinal() {
     document.getElementById('reconstructed1').innerText = txt1;
     document.getElementById('reconstructed2').innerText = txt2;
 }
-function download_(mime, filename, filecontent) {
-    $("body").append($("<a id='downloadLink' href-lang='" + mime + "' href='data:" + mime + ";base64,\n"+b64+"' title='" + filename + "' style='display:none' download='" + filename + "'>Download</a>"));
-    document.getElementById('downloadLink').click();
-    $("#downloadLink").remove();
-}
 function download() {
     var txt1 = document.getElementById('reconstructed1').innerText;
     var txt2 = document.getElementById('reconstructed2').innerText;
