@@ -337,6 +337,11 @@ function removeHighlight(id) {
     var circle = document.getElementById("addedCircle");
     svg.removeChild(circle);
 }
+function toClipboard(id) {
+    var text = document.getElementById(id).innerText;
+    navigator.clipboard.writeText(text);
+    return false;
+}
 
         </script>
     </body>

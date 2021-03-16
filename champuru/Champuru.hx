@@ -549,10 +549,10 @@ trace("" + (i > 0) + " " + (i == 0) + " " + (j > 0) + " " + (j == 0) + " " + (sh
         out("<fieldset>");
         out("<legend>3. Step - Sequence reconstruction</legend>");
         out("<p>Cleaning up ambiguities by sequence comparison took " + timeToStr(timestamp5 - timestamp4) + "ms.</p>");
-        out("<p>First reconstructed sequence: <span id='reconstructed1' class='sequence'>");
+        out("<p>First reconstructed sequence [<a href='#' onclick='return toClipboard(\"reconstructed1\")'>Copy to clipboard</a>]: <span id='reconstructed1' class='sequence'>");
         out(reconstruction.a);
         out("</span></p>");
-        out("<p>Second reconstructed sequence: <span id='reconstructed2' class='sequence'>");
+        out("<p>Second reconstructed sequence [<a href='#' onclick='return toClipboard(\"reconstructed2\")'>Copy to clipboard</a>]: <span id='reconstructed2' class='sequence'>");
         out(reconstruction.b);
         out("</span></p>");
         if (problems == 0) {

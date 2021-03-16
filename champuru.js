@@ -553,10 +553,10 @@ champuru_Champuru.doChampuru = function(fwd,rev,scoreCalculationMethod,iOffset,j
 	champuru_Champuru.mMsgs.add("<fieldset>");
 	champuru_Champuru.mMsgs.add("<legend>3. Step - Sequence reconstruction</legend>");
 	champuru_Champuru.mMsgs.add("<p>Cleaning up ambiguities by sequence comparison took " + ("" + Math.round((timestamp5 - timestamp4) * 1000)) + "ms.</p>");
-	champuru_Champuru.mMsgs.add("<p>First reconstructed sequence: <span id='reconstructed1' class='sequence'>");
+	champuru_Champuru.mMsgs.add("<p>First reconstructed sequence [<a href='#' onclick='return toClipboard(\"reconstructed1\")'>Copy to clipboard</a>]: <span id='reconstructed1' class='sequence'>");
 	champuru_Champuru.mMsgs.add(reconstruction.a);
 	champuru_Champuru.mMsgs.add("</span></p>");
-	champuru_Champuru.mMsgs.add("<p>Second reconstructed sequence: <span id='reconstructed2' class='sequence'>");
+	champuru_Champuru.mMsgs.add("<p>Second reconstructed sequence [<a href='#' onclick='return toClipboard(\"reconstructed2\")'>Copy to clipboard</a>]: <span id='reconstructed2' class='sequence'>");
 	champuru_Champuru.mMsgs.add(reconstruction.b);
 	champuru_Champuru.mMsgs.add("</span></p>");
 	if(problems == 0) {
