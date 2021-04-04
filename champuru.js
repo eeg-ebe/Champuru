@@ -178,6 +178,19 @@ champuru_Champuru.countProblems = function(s) {
 	}
 	return result;
 };
+champuru_Champuru.getProblematicPositions = function(s) {
+	var result = new List();
+	var _g1 = 0;
+	var _g = s.length;
+	while(_g1 < _g) {
+		var i = _g1++;
+		var c = s.charAt(i);
+		if(c == "_") {
+			result.add(i + 1);
+		}
+	}
+	return result;
+};
 champuru_Champuru.countAmb = function(s) {
 	var result = 0;
 	var _g1 = 0;
@@ -189,6 +202,20 @@ champuru_Champuru.countAmb = function(s) {
 			continue;
 		}
 		++result;
+	}
+	return result;
+};
+champuru_Champuru.getAmbPositions = function(s) {
+	var result = new List();
+	var _g1 = 0;
+	var _g = s.length;
+	while(_g1 < _g) {
+		var i = _g1++;
+		var c = s.charAt(i);
+		if(c == "A" || c == "C" || c == "T" || c == "G" || c == "_") {
+			continue;
+		}
+		result.add(i + 1);
 	}
 	return result;
 };
@@ -566,6 +593,15 @@ champuru_Champuru.doChampuru = function(fwd,rev,scoreCalculationMethod,iOffset,j
 	} else if(problems > 1) {
 		champuru_Champuru.mMsgs.add("<p>There are " + problems + " problematic positions!</p>");
 	}
+	if(problems >= 1) {
+		champuru_Champuru.mMsgs.add("<p>");
+		var s2 = "Problematic position(s) on forward: " + champuru_Champuru.getProblematicPositions(reconstruction.a).join(",");
+		champuru_Champuru.mMsgs.add(s2);
+		champuru_Champuru.mMsgs.add("<br>");
+		var s3 = "Problematic position(s) on reverse: " + champuru_Champuru.getProblematicPositions(reconstruction.b).join(",");
+		champuru_Champuru.mMsgs.add(s3);
+		champuru_Champuru.mMsgs.add("</p>");
+	}
 	if(problems > 0) {
 		champuru_Champuru.mMsgs.add("<span class='middle'><button onclick='colorProblems()'>Color problems</button><button onclick='removeColorFinal()'>Remove color</button></span>");
 	}
@@ -576,6 +612,15 @@ champuru_Champuru.doChampuru = function(fwd,rev,scoreCalculationMethod,iOffset,j
 	}
 	if(ambPos > 0) {
 		champuru_Champuru.mMsgs.add("<span class='middle'><button onclick='colorAmbPos()'>Color ambiguities</button><button onclick='removeColorFinal()'>Remove color</button></span>");
+	}
+	if(ambPos >= 1) {
+		champuru_Champuru.mMsgs.add("<p>");
+		var s4 = "Ambiguity position(s) on forward: " + champuru_Champuru.getAmbPositions(reconstruction.a).join(",");
+		champuru_Champuru.mMsgs.add(s4);
+		champuru_Champuru.mMsgs.add("<br>");
+		var s5 = "Ambiguity position(s) on reverse: " + champuru_Champuru.getAmbPositions(reconstruction.b).join(",");
+		champuru_Champuru.mMsgs.add(s5);
+		champuru_Champuru.mMsgs.add("</p>");
 	}
 	champuru_Champuru.mMsgs.add("</fieldset>");
 	return { result : champuru_Champuru.mMsgs.join(""), problematicPositions : problems, iOffset : iOffset, jOffset : jOffset};

@@ -168,6 +168,16 @@ class Champuru {
         }
         return result;
     }
+    public static function getProblematicPositions(s:String):List<Int> {
+        var result:List<Int> = new List<Int>();
+        for (i in 0...s.length) {
+            var c:String = s.charAt(i);
+            if (c == "_") {
+                result.add((i + 1));
+            }
+        }
+        return result;
+    }
     public static function countAmb(s:String):Int {
         var result:Int = 0;
         for (i in 0...s.length) {
@@ -176,6 +186,17 @@ class Champuru {
                 continue;
             }
             result++;
+        }
+        return result;
+    }
+    public static function getAmbPositions(s:String):List<Int> {
+        var result:List<Int> = new List<Int>();
+        for (i in 0...s.length) {
+            var c:String = s.charAt(i);
+            if (c == 'A' || c == 'C' || c == 'T' || c == 'G' || c == '_') {
+                continue;
+            }
+            result.add((i + 1));
         }
         return result;
     }
@@ -562,6 +583,13 @@ trace("" + (i > 0) + " " + (i == 0) + " " + (j > 0) + " " + (j == 0) + " " + (sh
         } else if (problems > 1) {
             out("<p>There are " + problems + " problematic positions!</p>");
         }
+        if (problems >= 1)  {
+            out("<p>");
+            out("Problematic position(s) on forward: " + getProblematicPositions(reconstruction.a).join(","));
+            out("<br>");
+            out("Problematic position(s) on reverse: " + getProblematicPositions(reconstruction.b).join(","));
+            out("</p>");
+        }
         if (problems > 0) {
             out("<span class='middle'><button onclick='colorProblems()'>Color problems</button><button onclick='removeColorFinal()'>Remove color</button></span>");
         }
@@ -572,6 +600,13 @@ trace("" + (i > 0) + " " + (i == 0) + " " + (j > 0) + " " + (j == 0) + " " + (sh
         }
         if (ambPos > 0) {
             out("<span class='middle'><button onclick='colorAmbPos()'>Color ambiguities</button><button onclick='removeColorFinal()'>Remove color</button></span>");
+        }
+        if (ambPos >= 1) {
+            out("<p>");
+            out("Ambiguity position(s) on forward: " + getAmbPositions(reconstruction.a).join(","));
+            out("<br>");
+            out("Ambiguity position(s) on reverse: " + getAmbPositions(reconstruction.b).join(","));
+            out("</p>");
         }
         out("</fieldset>");
 
