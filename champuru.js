@@ -594,12 +594,20 @@ champuru_Champuru.doChampuru = function(fwd,rev,scoreCalculationMethod,iOffset,j
 		champuru_Champuru.mMsgs.add("<p>There are " + problems + " problematic positions!</p>");
 	}
 	if(problems >= 1) {
+		var pF = champuru_Champuru.getProblematicPositions(reconstruction.a);
+		var pR = champuru_Champuru.getProblematicPositions(reconstruction.b);
 		champuru_Champuru.mMsgs.add("<p>");
-		var s2 = "Problematic position(s) on forward: " + champuru_Champuru.getProblematicPositions(reconstruction.a).join(",");
-		champuru_Champuru.mMsgs.add(s2);
-		champuru_Champuru.mMsgs.add("<br>");
-		var s3 = "Problematic position(s) on reverse: " + champuru_Champuru.getProblematicPositions(reconstruction.b).join(",");
-		champuru_Champuru.mMsgs.add(s3);
+		if(pF.length > 0) {
+			var s2 = "Problematic position(s) on forward: " + pF.join(",");
+			champuru_Champuru.mMsgs.add(s2);
+		}
+		if(pF.length > 0 && pR.length > 0) {
+			champuru_Champuru.mMsgs.add("<br>");
+		}
+		if(pR.length > 0) {
+			var s3 = "Problematic position(s) on reverse: " + pR.join(",");
+			champuru_Champuru.mMsgs.add(s3);
+		}
 		champuru_Champuru.mMsgs.add("</p>");
 	}
 	if(problems > 0) {
@@ -614,12 +622,20 @@ champuru_Champuru.doChampuru = function(fwd,rev,scoreCalculationMethod,iOffset,j
 		champuru_Champuru.mMsgs.add("<span class='middle'><button onclick='colorAmbPos()'>Color ambiguities</button><button onclick='removeColorFinal()'>Remove color</button></span>");
 	}
 	if(ambPos >= 1) {
+		var pF1 = champuru_Champuru.getAmbPositions(reconstruction.a);
+		var pR1 = champuru_Champuru.getAmbPositions(reconstruction.b);
 		champuru_Champuru.mMsgs.add("<p>");
-		var s4 = "Ambiguity position(s) on forward: " + champuru_Champuru.getAmbPositions(reconstruction.a).join(",");
-		champuru_Champuru.mMsgs.add(s4);
-		champuru_Champuru.mMsgs.add("<br>");
-		var s5 = "Ambiguity position(s) on reverse: " + champuru_Champuru.getAmbPositions(reconstruction.b).join(",");
-		champuru_Champuru.mMsgs.add(s5);
+		if(pF1.length > 0) {
+			var s4 = "Ambiguity position(s) on forward: " + champuru_Champuru.getAmbPositions(reconstruction.a).join(",");
+			champuru_Champuru.mMsgs.add(s4);
+		}
+		if(pF1.length > 0 && pR1.length > 0) {
+			champuru_Champuru.mMsgs.add("<br>");
+		}
+		if(pR1.length > 0) {
+			var s5 = "Ambiguity position(s) on reverse: " + champuru_Champuru.getAmbPositions(reconstruction.b).join(",");
+			champuru_Champuru.mMsgs.add(s5);
+		}
 		champuru_Champuru.mMsgs.add("</p>");
 	}
 	champuru_Champuru.mMsgs.add("</fieldset>");

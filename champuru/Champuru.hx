@@ -584,10 +584,18 @@ trace("" + (i > 0) + " " + (i == 0) + " " + (j > 0) + " " + (j == 0) + " " + (sh
             out("<p>There are " + problems + " problematic positions!</p>");
         }
         if (problems >= 1)  {
+            var pF:List<Int> = getProblematicPositions(reconstruction.a);
+            var pR:List<Int> = getProblematicPositions(reconstruction.b);
             out("<p>");
-            out("Problematic position(s) on forward: " + getProblematicPositions(reconstruction.a).join(","));
-            out("<br>");
-            out("Problematic position(s) on reverse: " + getProblematicPositions(reconstruction.b).join(","));
+            if (pF.length > 0) {
+                out("Problematic position(s) on forward: " + pF.join(","));
+            }
+            if (pF.length > 0 && pR.length > 0) {
+                out("<br>");
+            }
+            if (pR.length > 0) {
+                out("Problematic position(s) on reverse: " + pR.join(","));
+            }
             out("</p>");
         }
         if (problems > 0) {
@@ -602,10 +610,18 @@ trace("" + (i > 0) + " " + (i == 0) + " " + (j > 0) + " " + (j == 0) + " " + (sh
             out("<span class='middle'><button onclick='colorAmbPos()'>Color ambiguities</button><button onclick='removeColorFinal()'>Remove color</button></span>");
         }
         if (ambPos >= 1) {
+            var pF:List<Int> = getAmbPositions(reconstruction.a);
+            var pR:List<Int> = getAmbPositions(reconstruction.b);
             out("<p>");
-            out("Ambiguity position(s) on forward: " + getAmbPositions(reconstruction.a).join(","));
-            out("<br>");
-            out("Ambiguity position(s) on reverse: " + getAmbPositions(reconstruction.b).join(","));
+            if (pF.length > 0) {
+                out("Ambiguity position(s) on forward: " + getAmbPositions(reconstruction.a).join(","));
+            }
+            if (pF.length > 0 && pR.length > 0) {
+                out("<br>");
+            }
+            if (pR.length > 0) {
+                out("Ambiguity position(s) on reverse: " + getAmbPositions(reconstruction.b).join(","));
+            }
             out("</p>");
         }
         out("</fieldset>");
