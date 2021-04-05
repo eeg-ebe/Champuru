@@ -219,6 +219,9 @@ function rerunAnalysisWithDifferentOffsets(fwd, rev, method) {
 function resetForm() {
     document.getElementById('forward').value = '';
     document.getElementById('reverse').value = '';
+    document.getElementById('score').value = 1;
+    document.getElementById('resultArea').style.display = "none";
+    document.getElementById('exampleSection').style.display = "block";
 }
 
 function load(i) {
