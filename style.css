@@ -183,3 +183,7 @@ legend {
 .plot {
     border: 1px solid black;
 }
+
+.greyout {
+    color: #999;
+}

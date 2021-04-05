@@ -567,7 +567,7 @@ trace("" + (i > 0) + " " + (i == 0) + " " + (j > 0) + " " + (j == 0) + " " + (sh
         problems = countProblems(reconstruction.a) + countProblems(reconstruction.b);
         var ambPos:Int = countAmb(reconstruction.a) + countAmb(reconstruction.b);
 
-        out("<fieldset>");
+        out("<fieldset class='" + ((problems > 0) ? "greyout" : "") + "'>");
         out("<legend>3. Step - Sequence reconstruction</legend>");
         out("<p>Cleaning up ambiguities by sequence comparison took " + timeToStr(timestamp5 - timestamp4) + "ms.</p>");
         out("<p>First reconstructed sequence [<a href='#' onclick='return toClipboard(\"reconstructed1\")'>Copy to clipboard</a>]: <span id='reconstructed1' class='sequence'>");

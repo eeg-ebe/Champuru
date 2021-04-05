@@ -577,7 +577,7 @@ champuru_Champuru.doChampuru = function(fwd,rev,scoreCalculationMethod,iOffset,j
 	var timestamp5 = new Date().getTime() / 1000;
 	problems = champuru_Champuru.countProblems(reconstruction.a) + champuru_Champuru.countProblems(reconstruction.b);
 	var ambPos = champuru_Champuru.countAmb(reconstruction.a) + champuru_Champuru.countAmb(reconstruction.b);
-	champuru_Champuru.mMsgs.add("<fieldset>");
+	champuru_Champuru.mMsgs.add("<fieldset class='" + (problems > 0 ? "greyout" : "") + "'>");
 	champuru_Champuru.mMsgs.add("<legend>3. Step - Sequence reconstruction</legend>");
 	champuru_Champuru.mMsgs.add("<p>Cleaning up ambiguities by sequence comparison took " + ("" + Math.round((timestamp5 - timestamp4) * 1000)) + "ms.</p>");
 	champuru_Champuru.mMsgs.add("<p>First reconstructed sequence [<a href='#' onclick='return toClipboard(\"reconstructed1\")'>Copy to clipboard</a>]: <span id='reconstructed1' class='sequence'>");
