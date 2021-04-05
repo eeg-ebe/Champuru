@@ -31,6 +31,13 @@ List.prototype = {
 		this.q = x;
 		this.length++;
 	}
+	,first: function() {
+		if(this.h == null) {
+			return null;
+		} else {
+			return this.h.item;
+		}
+	}
 	,clear: function() {
 		this.h = null;
 		this.q = null;
@@ -293,6 +300,7 @@ champuru_Champuru.diff = function(a,b,shift) {
 	var length = a.length;
 	var this1 = new Array(length);
 	var result = this1;
+	var xPos = new List();
 	var _g1 = 0;
 	var _g = a.length;
 	while(_g1 < _g) {
@@ -303,9 +311,12 @@ champuru_Champuru.diff = function(a,b,shift) {
 			result[i] = a_;
 		} else {
 			result[i] = a_ & b_;
+			if((a_ | result[i]) != b_) {
+				xPos.add(i + 1);
+			}
 		}
 	}
-	return result;
+	return { result : result, pos : xPos};
 };
 champuru_Champuru.minus = function(orig,cons,idx) {
 	var origCorr = idx < 0 ? -idx : 0;
@@ -353,12 +364,12 @@ champuru_Champuru.reconstructSeq = function(fwd,rev,sequenceA,sequenceB,i,j) {
 	}
 	var reconstructedA_ = champuru_Champuru.diff(a_,restR,ashift);
 	var reconstructedB_ = champuru_Champuru.diff(b_,restF,bshift);
-	var recA = champuru_Champuru.toString(reconstructedA_);
-	var recB = champuru_Champuru.toString(reconstructedB_);
+	var recA = champuru_Champuru.toString(reconstructedA_.result);
+	var recB = champuru_Champuru.toString(reconstructedB_.result);
 	if(recA != sequenceA || recB != sequenceB) {
 		return champuru_Champuru.reconstructSeq(fwd,rev,recA,recB,i,j);
 	}
-	return { a : recA, b : recB};
+	return { a : recA, b : recB, fPos : reconstructedB_.pos, rPos : reconstructedA_.pos};
 };
 champuru_Champuru.genScorePlot = function(scores,high,low) {
 	var result = new List();
@@ -598,14 +609,14 @@ champuru_Champuru.doChampuru = function(fwd,rev,scoreCalculationMethod,iOffset,j
 		var pR = champuru_Champuru.getProblematicPositions(reconstruction.b);
 		champuru_Champuru.mMsgs.add("<p>");
 		if(pF.length > 0) {
-			var s2 = "Problematic position(s) on forward: " + pF.join(",");
+			var s2 = "Problematic position(s) on forward: <span class='sequence'>" + pF.join(",") + "</span>";
 			champuru_Champuru.mMsgs.add(s2);
 		}
 		if(pF.length > 0 && pR.length > 0) {
 			champuru_Champuru.mMsgs.add("<br>");
 		}
 		if(pR.length > 0) {
-			var s3 = "Problematic position(s) on reverse: " + pR.join(",");
+			var s3 = "Problematic position(s) on reverse: <span class='sequence'>" + pR.join(",") + "</span>";
 			champuru_Champuru.mMsgs.add(s3);
 		}
 		champuru_Champuru.mMsgs.add("</p>");
@@ -618,25 +629,43 @@ champuru_Champuru.doChampuru = function(fwd,rev,scoreCalculationMethod,iOffset,j
 	} else if(ambPos > 1) {
 		champuru_Champuru.mMsgs.add("<p>There are " + ambPos + " ambiguities left!</p>");
 	}
-	if(ambPos > 0) {
-		champuru_Champuru.mMsgs.add("<span class='middle'><button onclick='colorAmbPos()'>Color ambiguities</button><button onclick='removeColorFinal()'>Remove color</button></span>");
+	if(reconstruction.fPos.length >= 1 || reconstruction.rPos.length >= 1) {
+		champuru_Champuru.mMsgs.add("<p>");
+		if(reconstruction.fPos.length == 1) {
+			var s4 = "A peak unaccounted for was detected in the forward sequence at position: <span class='sequence'>" + reconstruction.fPos.first() + "</span><br>";
+			champuru_Champuru.mMsgs.add(s4);
+		} else if(reconstruction.fPos.length > 1) {
+			var s5 = "Peaks unaccounted for were detected in the forward sequence at positions: <span class='sequence'>" + reconstruction.fPos.join(",") + "</span><br>";
+			champuru_Champuru.mMsgs.add(s5);
+		}
+		if(reconstruction.rPos.length == 1) {
+			var s6 = "A peak unaccounted for was detected in the reverse sequence at position: <span class='sequence'>" + reconstruction.rPos.first() + "</span><br>";
+			champuru_Champuru.mMsgs.add(s6);
+		} else if(reconstruction.rPos.length > 1) {
+			var s7 = "Peaks unaccounted for were detected in the reverse sequence at positions: <span class='sequence'>" + reconstruction.rPos.join(",") + "</span><br>";
+			champuru_Champuru.mMsgs.add(s7);
+		}
+		champuru_Champuru.mMsgs.add("</p>");
 	}
 	if(ambPos >= 1) {
 		var pF1 = champuru_Champuru.getAmbPositions(reconstruction.a);
 		var pR1 = champuru_Champuru.getAmbPositions(reconstruction.b);
 		champuru_Champuru.mMsgs.add("<p>");
 		if(pF1.length > 0) {
-			var s4 = "Ambiguity position(s) on forward: " + champuru_Champuru.getAmbPositions(reconstruction.a).join(",");
-			champuru_Champuru.mMsgs.add(s4);
+			var s8 = "Ambiguity position(s) on forward: <span class='sequence'>" + champuru_Champuru.getAmbPositions(reconstruction.a).join(",") + "</span>";
+			champuru_Champuru.mMsgs.add(s8);
 		}
 		if(pF1.length > 0 && pR1.length > 0) {
 			champuru_Champuru.mMsgs.add("<br>");
 		}
 		if(pR1.length > 0) {
-			var s5 = "Ambiguity position(s) on reverse: " + champuru_Champuru.getAmbPositions(reconstruction.b).join(",");
-			champuru_Champuru.mMsgs.add(s5);
+			var s9 = "Ambiguity position(s) on reverse: <span class='sequence'>" + champuru_Champuru.getAmbPositions(reconstruction.b).join(",") + "</span>";
+			champuru_Champuru.mMsgs.add(s9);
 		}
 		champuru_Champuru.mMsgs.add("</p>");
+	}
+	if(ambPos > 0) {
+		champuru_Champuru.mMsgs.add("<span class='middle'><button onclick='colorAmbPos()'>Color ambiguities</button><button onclick='removeColorFinal()'>Remove color</button></span>");
 	}
 	champuru_Champuru.mMsgs.add("</fieldset>");
 	return { result : champuru_Champuru.mMsgs.join(""), problematicPositions : problems, iOffset : iOffset, jOffset : jOffset};

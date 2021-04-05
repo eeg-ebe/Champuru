@@ -250,8 +250,9 @@ class Champuru {
         }
         return result;
     }
-    public static function diff(a:Vector<Int>, b:Vector<Int>, shift:Int):Vector<Int> {
+    public static function diff(a:Vector<Int>, b:Vector<Int>, shift:Int):{ result : Vector<Int>, pos:List<Int> } {
         var result:Vector<Int> = new Vector<Int>(a.length);
+        var xPos:List<Int> = new List<Int>();
         for (i in 0...a.length) {
             var a_:Int = a[i];
             var b_:Int = (i + shift >= 0 && i + shift < b.length) ? b[i + shift] : 0;
@@ -259,9 +260,15 @@ class Champuru {
                 result[i] = a_;
             } else {
                 result[i] = a_ & b_;
+                if ((a_ | result[i]) != b_) {
+                    xPos.add(i + 1);
+                }
             }
         }
-        return result;
+        return {
+            result : result,
+            pos : xPos,
+        };
     }
     public static function minus(orig:Vector<Int>, cons:Vector<Int>, idx:Int):Vector<Int> {
         var origCorr:Int = (idx < 0) ? -idx : 0;
@@ -280,7 +287,7 @@ class Champuru {
         }
         return result;
     }
-    public static function reconstructSeq(fwd:String, rev:String, sequenceA:String, sequenceB:String, i:Int, j:Int):{a:String, b:String} {
+    public static function reconstructSeq(fwd:String, rev:String, sequenceA:String, sequenceB:String, i:Int, j:Int):{a:String, b:String, fPos:List<Int>, rPos:List<Int> } {
         var fwd_:Vector<Int> = toInts(fwd), rev_:Vector<Int> = toInts(rev), a_:Vector<Int> = toInts(sequenceA), b_:Vector<Int> = toInts(sequenceB);
 
 //trace("=== " + i + ", " + j + " " + (-j));
@@ -313,49 +320,11 @@ trace("restR " + toString(restR));
                 bshift = shift;
             }
         }
-        var reconstructedA_:Vector<Int> = diff(a_, restR, ashift);
-        var reconstructedB_:Vector<Int> = diff(b_, restF, bshift);
+        var reconstructedA_:{ result : Vector<Int>, pos:List<Int> } = diff(a_, restR, ashift);
+        var reconstructedB_:{ result : Vector<Int>, pos:List<Int> } = diff(b_, restF, bshift);
 
-/*
-trace("----- " + (i > 0) + " " + (i == 0) + " " + (j > 0) + " " + (j == 0) + " " + (shift > 0) + " " + (shift == 0) + " -----");
-
-trace("-- " + ashift + " --");
-trace("      " + sequenceA);
-trace("restR " + toString(restR));
-trace("      " + toString(reconstructedA_));
-trace("-- " + bshift + " --");
-trace("      " + sequenceB);
-trace("restF " + toString(restF));
-trace("      " + toString(reconstructedB_));
-
-var rAA = "";
-if (countProblems(toString(diff(a_, restR, 0))) == 0) {
-    rAA += "0,";
-}
-if (countProblems(toString(diff(a_, restR, shift))) == 0) {
-    rAA += "shift,";
-}
-if (countProblems(toString(diff(a_, restR, -shift))) == 0) {
-    rAA += "neg.shift,";
-}
-
-var rBB = "";
-if (countProblems(toString(diff(b_, restF, 0))) == 0) {
-    rBB += "0,";
-}
-if (countProblems(toString(diff(b_, restF, shift))) == 0) {
-    rBB += "shift,";
-}
-if (countProblems(toString(diff(b_, restF, -shift))) == 0) {
-    rBB += "neg.shift,";
-}
-
-
-trace("" + (i > 0) + " " + (i == 0) + " " + (j > 0) + " " + (j == 0) + " " + (shift > 0) + " " + (shift == 0) + " = " + rAA + " | " + rBB + " =");
-*/
-
-        var recA:String = toString(reconstructedA_);
-        var recB:String = toString(reconstructedB_);
+        var recA:String = toString(reconstructedA_.result);
+        var recB:String = toString(reconstructedB_.result);
 
         if (recA != sequenceA || recB != sequenceB) {
             return reconstructSeq(fwd, rev, recA, recB, i, j);
@@ -363,7 +332,9 @@ trace("" + (i > 0) + " " + (i == 0) + " " + (j > 0) + " " + (j == 0) + " " + (sh
 
         return {
             a : recA,
-            b : recB
+            b : recB,
+            fPos : reconstructedB_.pos,
+            rPos : reconstructedA_.pos,
         };
     }
 
@@ -562,7 +533,7 @@ trace("" + (i > 0) + " " + (i == 0) + " " + (j > 0) + " " + (j == 0) + " " + (sh
         out("<br>");
 
         var timestamp4:Float = Timer.stamp();
-        var reconstruction:{a:String, b:String} = reconstructSeq(fwd, rev, sequenceA, sequenceB, iOffset, jOffset);
+        var reconstruction:{a:String, b:String, fPos:List<Int>, rPos:List<Int>} = reconstructSeq(fwd, rev, sequenceA, sequenceB, iOffset, jOffset);
         var timestamp5:Float = Timer.stamp();
         problems = countProblems(reconstruction.a) + countProblems(reconstruction.b);
         var ambPos:Int = countAmb(reconstruction.a) + countAmb(reconstruction.b);
@@ -588,13 +559,13 @@ trace("" + (i > 0) + " " + (i == 0) + " " + (j > 0) + " " + (j == 0) + " " + (sh
             var pR:List<Int> = getProblematicPositions(reconstruction.b);
             out("<p>");
             if (pF.length > 0) {
-                out("Problematic position(s) on forward: " + pF.join(","));
+                out("Problematic position(s) on forward: <span class='sequence'>" + pF.join(",") + "</span>");
             }
             if (pF.length > 0 && pR.length > 0) {
                 out("<br>");
             }
             if (pR.length > 0) {
-                out("Problematic position(s) on reverse: " + pR.join(","));
+                out("Problematic position(s) on reverse: <span class='sequence'>" + pR.join(",") + "</span>");
             }
             out("</p>");
         }
@@ -606,23 +577,37 @@ trace("" + (i > 0) + " " + (i == 0) + " " + (j > 0) + " " + (j == 0) + " " + (sh
         } else if (ambPos > 1) {
             out("<p>There are " + ambPos + " ambiguities left!</p>");
         }
-        if (ambPos > 0) {
-            out("<span class='middle'><button onclick='colorAmbPos()'>Color ambiguities</button><button onclick='removeColorFinal()'>Remove color</button></span>");
+        if (reconstruction.fPos.length >= 1 || reconstruction.rPos.length >= 1) {
+            out("<p>");
+            if (reconstruction.fPos.length == 1) {
+                out("A peak unaccounted for was detected in the forward sequence at position: <span class='sequence'>" + reconstruction.fPos.first() + "</span><br>");
+            } else if (reconstruction.fPos.length > 1) {
+                out("Peaks unaccounted for were detected in the forward sequence at positions: <span class='sequence'>" + (reconstruction.fPos.join(",")) + "</span><br>");
+            }
+            if (reconstruction.rPos.length == 1) {
+                out("A peak unaccounted for was detected in the reverse sequence at position: <span class='sequence'>" + reconstruction.rPos.first() + "</span><br>");
+            } else if (reconstruction.rPos.length > 1) {
+                out("Peaks unaccounted for were detected in the reverse sequence at positions: <span class='sequence'>" + (reconstruction.rPos.join(",")) + "</span><br>");
+            }
+            out("</p>");
         }
         if (ambPos >= 1) {
             var pF:List<Int> = getAmbPositions(reconstruction.a);
             var pR:List<Int> = getAmbPositions(reconstruction.b);
             out("<p>");
             if (pF.length > 0) {
-                out("Ambiguity position(s) on forward: " + getAmbPositions(reconstruction.a).join(","));
+                out("Ambiguity position(s) on forward: <span class='sequence'>" + getAmbPositions(reconstruction.a).join(",") + "</span>");
             }
             if (pF.length > 0 && pR.length > 0) {
                 out("<br>");
             }
             if (pR.length > 0) {
-                out("Ambiguity position(s) on reverse: " + getAmbPositions(reconstruction.b).join(","));
+                out("Ambiguity position(s) on reverse: <span class='sequence'>" + getAmbPositions(reconstruction.b).join(",") + "</span>");
             }
             out("</p>");
+        }
+        if (ambPos > 0) {
+            out("<span class='middle'><button onclick='colorAmbPos()'>Color ambiguities</button><button onclick='removeColorFinal()'>Remove color</button></span>");
         }
         out("</fieldset>");
 
