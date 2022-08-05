@@ -250,9 +250,10 @@ class Champuru {
         }
         return result;
     }
-    public static function diff(a:Vector<Int>, b:Vector<Int>, shift:Int):{ result : Vector<Int>, pos:List<Int> } {
+    public static function diff(a:Vector<Int>, b:Vector<Int>, shift:Int):{ result : Vector<Int>, pos:List<Int>, problems:List<Int> } {
         var result:Vector<Int> = new Vector<Int>(a.length);
         var xPos:List<Int> = new List<Int>();
+        var problems:List<Int> = new List<Int>();
         for (i in 0...a.length) {
             var a_:Int = a[i];
             var b_:Int = (i + shift >= 0 && i + shift < b.length) ? b[i + shift] : 0;
@@ -263,11 +264,15 @@ class Champuru {
                 if ((a_ | result[i]) != b_) {
                     xPos.add(i + 1);
                 }
+                if (result[i] == 0) {
+                    problems.add(i + 1);
+                }
             }
         }
         return {
             result : result,
             pos : xPos,
+            problems: problems
         };
     }
     public static function minus(orig:Vector<Int>, cons:Vector<Int>, idx:Int):Vector<Int> {
@@ -288,23 +293,22 @@ class Champuru {
         return result;
     }
     public static function reconstructSeq(fwd:String, rev:String, sequenceA:String, sequenceB:String, i:Int, j:Int):{a:String, b:String, fPos:List<Int>, rPos:List<Int> } {
-        var fwd_:Vector<Int> = toInts(fwd), rev_:Vector<Int> = toInts(rev), a_:Vector<Int> = toInts(sequenceA), b_:Vector<Int> = toInts(sequenceB);
 
-//trace("=== " + i + ", " + j + " " + (-j));
+trace("=== Input of reconstruct sequence function ===");
+
+        var fwd_:Vector<Int> = toInts(fwd), rev_:Vector<Int> = toInts(rev), a_:Vector<Int> = toInts(sequenceA), b_:Vector<Int> = toInts(sequenceB);
 
         var restF:Vector<Int> = minus(fwd_, a_, i);
         var restR:Vector<Int> = minus(rev_, b_, -j);
 
-/*
-trace("-- " + i);
-trace("      " + fwd);
-trace("      " + sequenceA);
-trace("restF " + toString(restF));
-trace("--" + (-j));
-trace("      " + rev);
-trace("      " + sequenceB);
-trace("restR " + toString(restR));
-*/
+trace("fwd: " + fwd + " " + fwd_);
+trace("rev: " + rev + " " + rev_);
+trace("sequenceA: " + sequenceA + " " + a_);
+trace("sequenceB: " + sequenceB + " " + b_);
+trace("i: " + i);
+trace("j: " + j);
+trace("restF: " + restF);
+trace("restR: " + restR);
 
         var shift:Int = i - j;
         var ashift:Int = 0, bshift:Int = 0;
@@ -320,14 +324,33 @@ trace("restR " + toString(restR));
                 bshift = shift;
             }
         }
-        var reconstructedA_:{ result : Vector<Int>, pos:List<Int> } = diff(a_, restR, ashift);
-        var reconstructedB_:{ result : Vector<Int>, pos:List<Int> } = diff(b_, restF, bshift);
+        var reconstructedA_:{ result : Vector<Int>, pos:List<Int>, problems:List<Int> } = diff(a_, restR, ashift); // original, rest, shift
+        var reconstructedB_:{ result : Vector<Int>, pos:List<Int>, problems:List<Int> } = diff(b_, restF, bshift);
+        
+        if (reconstructedA_.problems.length + reconstructedB_.problems.length != 0) {
+            reconstructedA_ = diff(a_, restR, 0);
+            reconstructedB_ = diff(b_, restF, shift);
+            if (reconstructedA_.problems.length + reconstructedB_.problems.length != 0) {
+                reconstructedA_ = diff(a_, restR, shift);
+                reconstructedB_ = diff(b_, restF, 0);
+                if (reconstructedA_.problems.length + reconstructedB_.problems.length != 0) {
+                    reconstructedA_ = diff(a_, restR, 0);
+                    reconstructedB_ = diff(b_, restF, -shift);
+                    if (reconstructedA_.problems.length + reconstructedB_.problems.length != 0) {
+                        reconstructedA_ = diff(a_, restR, -shift);
+                        reconstructedB_ = diff(b_, restF, 0);
+                    }
+                }
+            }
+        }
 
         var recA:String = toString(reconstructedA_.result);
         var recB:String = toString(reconstructedB_.result);
 
-        if (recA != sequenceA || recB != sequenceB) {
-            return reconstructSeq(fwd, rev, recA, recB, i, j);
+        if (reconstructedA_.problems.length + reconstructedB_.problems.length == 0) {
+            if (recA != sequenceA || recB != sequenceB) {
+                return reconstructSeq(fwd, rev, recA, recB, i, j);
+            }
         }
 
         return {
