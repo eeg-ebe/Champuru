@@ -339,6 +339,10 @@ trace("restR: " + restR);
                     if (reconstructedA_.problems.length + reconstructedB_.problems.length != 0) {
                         reconstructedA_ = diff(a_, restR, -shift);
                         reconstructedB_ = diff(b_, restF, 0);
+                        if (reconstructedA_.problems.length + reconstructedB_.problems.length != 0) {
+                            reconstructedA_ = diff(a_, restR, ashift);
+                            reconstructedB_ = diff(b_, restF, bshift);
+                        }
                     }
                 }
             }

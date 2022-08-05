@@ -358,6 +358,10 @@ champuru_Champuru.reconstructSeq = function(fwd,rev,sequenceA,sequenceB,i,j) {
 				if(reconstructedA_.problems.length + reconstructedB_.problems.length != 0) {
 					reconstructedA_ = champuru_Champuru.diff(a_,restR,-shift);
 					reconstructedB_ = champuru_Champuru.diff(b_,restF,0);
+					if(reconstructedA_.problems.length + reconstructedB_.problems.length != 0) {
+						reconstructedA_ = champuru_Champuru.diff(a_,restR,ashift);
+						reconstructedB_ = champuru_Champuru.diff(b_,restF,bshift);
+					}
 				}
 			}
 		}
