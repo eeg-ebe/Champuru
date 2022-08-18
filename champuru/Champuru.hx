@@ -519,6 +519,8 @@ trace("restR: " + restR);
 
         var sequenceA:String = reconstruct(fwd, rev, iOffset);
         var sequenceB:String = reconstruct(fwd, rev, jOffset);
+        var sequenceA2:String = reconstruct(fwd, rev, jOffset);
+        var sequenceB2:String = reconstruct(fwd, rev, iOffset);
 
         var problemsFwd:Int = countProblems(sequenceA);
         var problemsRev:Int = countProblems(sequenceB);
@@ -560,7 +562,12 @@ trace("restR: " + restR);
         out("<br>");
 
         var timestamp4:Float = Timer.stamp();
-        var reconstruction:{a:String, b:String, fPos:List<Int>, rPos:List<Int>} = reconstructSeq(fwd, rev, sequenceA, sequenceB, iOffset, jOffset);
+        var reconstruction1:{a:String, b:String, fPos:List<Int>, rPos:List<Int>} = reconstructSeq(fwd, rev, sequenceA, sequenceB, iOffset, jOffset);
+        var reconstruction2:{a:String, b:String, fPos:List<Int>, rPos:List<Int>} = reconstructSeq(fwd, rev, sequenceA2, sequenceB2, jOffset, iOffset);
+        var quality1:Int = countProblems(reconstruction1.a) + countProblems(reconstruction1.b) + countAmb(reconstruction1.a) + countAmb(reconstruction1.b);
+        var quality2:Int = countProblems(reconstruction2.a) + countProblems(reconstruction2.b) + countAmb(reconstruction2.a) + countAmb(reconstruction2.b);
+        trace("qualities: " + quality1 + " " + quality2);
+        var reconstruction:{a:String, b:String, fPos:List<Int>, rPos:List<Int>} = (quality1 > quality2) ? reconstruction2 : reconstruction1;
         var timestamp5:Float = Timer.stamp();
         problems = countProblems(reconstruction.a) + countProblems(reconstruction.b);
         var ambPos:Int = countAmb(reconstruction.a) + countAmb(reconstruction.b);

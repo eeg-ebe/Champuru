@@ -570,6 +570,8 @@ champuru_Champuru.doChampuru = function(fwd,rev,scoreCalculationMethod,iOffset,j
 	champuru_Champuru.mMsgs.add("<br>");
 	var sequenceA = champuru_Champuru.reconstruct(fwd,rev,iOffset);
 	var sequenceB = champuru_Champuru.reconstruct(fwd,rev,jOffset);
+	var sequenceA2 = champuru_Champuru.reconstruct(fwd,rev,jOffset);
+	var sequenceB2 = champuru_Champuru.reconstruct(fwd,rev,iOffset);
 	var problemsFwd = champuru_Champuru.countProblems(sequenceA);
 	var problemsRev = champuru_Champuru.countProblems(sequenceB);
 	var problems = problemsFwd + problemsRev;
@@ -607,7 +609,12 @@ champuru_Champuru.doChampuru = function(fwd,rev,scoreCalculationMethod,iOffset,j
 	champuru_Champuru.mMsgs.add("</fieldset>");
 	champuru_Champuru.mMsgs.add("<br>");
 	var timestamp4 = HxOverrides.now() / 1000;
-	var reconstruction = champuru_Champuru.reconstructSeq(fwd,rev,sequenceA,sequenceB,iOffset,jOffset);
+	var reconstruction1 = champuru_Champuru.reconstructSeq(fwd,rev,sequenceA,sequenceB,iOffset,jOffset);
+	var reconstruction2 = champuru_Champuru.reconstructSeq(fwd,rev,sequenceA2,sequenceB2,jOffset,iOffset);
+	var quality1 = champuru_Champuru.countProblems(reconstruction1.a) + champuru_Champuru.countProblems(reconstruction1.b) + champuru_Champuru.countAmb(reconstruction1.a) + champuru_Champuru.countAmb(reconstruction1.b);
+	var quality2 = champuru_Champuru.countProblems(reconstruction2.a) + champuru_Champuru.countProblems(reconstruction2.b) + champuru_Champuru.countAmb(reconstruction2.a) + champuru_Champuru.countAmb(reconstruction2.b);
+	console.log("champuru/Champuru.hx:569:","qualities: " + quality1 + " " + quality2);
+	var reconstruction = quality1 > quality2 ? reconstruction2 : reconstruction1;
 	var timestamp5 = HxOverrides.now() / 1000;
 	problems = champuru_Champuru.countProblems(reconstruction.a) + champuru_Champuru.countProblems(reconstruction.b);
 	var ambPos = champuru_Champuru.countAmb(reconstruction.a) + champuru_Champuru.countAmb(reconstruction.b);
