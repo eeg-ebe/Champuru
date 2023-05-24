@@ -265,6 +265,7 @@ class Champuru {
                     xPos.add(i + 1);
                 }
                 if (result[i] == 0) {
+                    result[i] = a_;
                     problems.add(i + 1);
                 }
             }

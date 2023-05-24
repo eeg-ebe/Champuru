@@ -286,6 +286,7 @@ champuru_Champuru.diff = function(a,b,shift) {
 				xPos.add(i + 1);
 			}
 			if(result[i] == 0) {
+				result[i] = a_;
 				problems.add(i + 1);
 			}
 		}
@@ -316,21 +317,21 @@ champuru_Champuru.minus = function(orig,cons,idx) {
 	return result;
 };
 champuru_Champuru.reconstructSeq = function(fwd,rev,sequenceA,sequenceB,i,j) {
-	console.log("champuru/Champuru.hx:297:","=== Input of reconstruct sequence function ===");
+	console.log("champuru/Champuru.hx:298:","=== Input of reconstruct sequence function ===");
 	var fwd_ = champuru_Champuru.toInts(fwd);
 	var rev_ = champuru_Champuru.toInts(rev);
 	var a_ = champuru_Champuru.toInts(sequenceA);
 	var b_ = champuru_Champuru.toInts(sequenceB);
 	var restF = champuru_Champuru.minus(fwd_,a_,i);
 	var restR = champuru_Champuru.minus(rev_,b_,-j);
-	console.log("champuru/Champuru.hx:304:","fwd: " + fwd + " " + Std.string(fwd_));
-	console.log("champuru/Champuru.hx:305:","rev: " + rev + " " + Std.string(rev_));
-	console.log("champuru/Champuru.hx:306:","sequenceA: " + sequenceA + " " + Std.string(a_));
-	console.log("champuru/Champuru.hx:307:","sequenceB: " + sequenceB + " " + Std.string(b_));
-	console.log("champuru/Champuru.hx:308:","i: " + i);
-	console.log("champuru/Champuru.hx:309:","j: " + j);
-	console.log("champuru/Champuru.hx:310:","restF: " + Std.string(restF));
-	console.log("champuru/Champuru.hx:311:","restR: " + Std.string(restR));
+	console.log("champuru/Champuru.hx:305:","fwd: " + fwd + " " + Std.string(fwd_));
+	console.log("champuru/Champuru.hx:306:","rev: " + rev + " " + Std.string(rev_));
+	console.log("champuru/Champuru.hx:307:","sequenceA: " + sequenceA + " " + Std.string(a_));
+	console.log("champuru/Champuru.hx:308:","sequenceB: " + sequenceB + " " + Std.string(b_));
+	console.log("champuru/Champuru.hx:309:","i: " + i);
+	console.log("champuru/Champuru.hx:310:","j: " + j);
+	console.log("champuru/Champuru.hx:311:","restF: " + Std.string(restF));
+	console.log("champuru/Champuru.hx:312:","restR: " + Std.string(restR));
 	var shift = i - j;
 	var ashift = 0;
 	var bshift = 0;
@@ -613,7 +614,7 @@ champuru_Champuru.doChampuru = function(fwd,rev,scoreCalculationMethod,iOffset,j
 	var reconstruction2 = champuru_Champuru.reconstructSeq(fwd,rev,sequenceA2,sequenceB2,jOffset,iOffset);
 	var quality1 = champuru_Champuru.countProblems(reconstruction1.a) + champuru_Champuru.countProblems(reconstruction1.b) + champuru_Champuru.countAmb(reconstruction1.a) + champuru_Champuru.countAmb(reconstruction1.b);
 	var quality2 = champuru_Champuru.countProblems(reconstruction2.a) + champuru_Champuru.countProblems(reconstruction2.b) + champuru_Champuru.countAmb(reconstruction2.a) + champuru_Champuru.countAmb(reconstruction2.b);
-	console.log("champuru/Champuru.hx:569:","qualities: " + quality1 + " " + quality2);
+	console.log("champuru/Champuru.hx:570:","qualities: " + quality1 + " " + quality2);
 	var reconstruction = quality1 > quality2 ? reconstruction2 : reconstruction1;
 	var timestamp5 = HxOverrides.now() / 1000;
 	problems = champuru_Champuru.countProblems(reconstruction.a) + champuru_Champuru.countProblems(reconstruction.b);
