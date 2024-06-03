@@ -349,8 +349,8 @@ class Worker
         var firstSequenceIsSame:Bool = false;
         var secondSequenceIsSame:Bool = false;
         if (perlReimplementationOutput.sequence1 != null && perlReimplementationOutput.sequence2 != null) {
-            result.seq1.toString().indexOf(perlReimplementationOutput.sequence1) != -1 || result.seq1.toString().indexOf(perlReimplementationOutput.sequence2) != -1;
-            result.seq2.toString().indexOf(perlReimplementationOutput.sequence1) != -1 || result.seq2.toString().indexOf(perlReimplementationOutput.sequence2) != -1;
+            firstSequenceIsSame = (result.seq1.toString().indexOf(perlReimplementationOutput.sequence1) != -1 || result.seq1.toString().indexOf(perlReimplementationOutput.sequence2) != -1);
+            secondSequenceIsSame = (result.seq2.toString().indexOf(perlReimplementationOutput.sequence1) != -1 || result.seq2.toString().indexOf(perlReimplementationOutput.sequence2) != -1);
         }
         if (!firstSequenceIsSame || !secondSequenceIsSame) {
             var idx1Same = perlReimplementationOutput.index1 == score1 || perlReimplementationOutput.index1 == score2;

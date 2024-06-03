@@ -549,7 +549,9 @@ champuru_Worker.generateHtml = function(fwd,rev,scoreCalculationMethod,iOffset,j
 				var s = c.toIUPACCode();
 				result1.add(s);
 			}
-			var tmp = result1.join("");
+			firstSequenceIsSame = result1.join("").indexOf(perlReimplementationOutput.sequence2) != -1;
+		} else {
+			firstSequenceIsSame = true;
 		}
 		var _this = result.seq2;
 		var result1 = new haxe_ds_List();
@@ -572,7 +574,9 @@ champuru_Worker.generateHtml = function(fwd,rev,scoreCalculationMethod,iOffset,j
 				var s = c.toIUPACCode();
 				result.add(s);
 			}
-			var tmp = result.join("");
+			secondSequenceIsSame = result.join("").indexOf(perlReimplementationOutput.sequence2) != -1;
+		} else {
+			secondSequenceIsSame = true;
 		}
 	}
 	if(!firstSequenceIsSame || !secondSequenceIsSame) {
