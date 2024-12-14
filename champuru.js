@@ -272,7 +272,7 @@ champuru_Worker.generateHtml = function(fwd,rev,scoreCalculationMethod,iOffset,j
 	champuru_Worker.mMsgs.add("' title='table.tsv' download='table.tsv'>Download</a>lists the best compatibility scores and their positions:</p>");
 	champuru_Worker.mMsgs.add("<table class='scoreTable center'>");
 	champuru_Worker.mMsgs.add("<tr class='header'>");
-	champuru_Worker.mMsgs.add("<td>#</td><td>Offset</td><td>Score</td><td>Matches</td><td>Mismatches</td><td>P(score)</td><td>P(higher score)</td>");
+	champuru_Worker.mMsgs.add("<td>#</td><td>Offset</td><td>Score</td><td>Matches</td><td>Mismatches</td><td>P(score)</td><td>P(higher score)</td><td>Highlight</td>");
 	champuru_Worker.mMsgs.add("</tr>");
 	var i = 1;
 	var _g = 0;
@@ -285,10 +285,10 @@ champuru_Worker.generateHtml = function(fwd,rev,scoreCalculationMethod,iOffset,j
 		var s = -(score.score - distribution.mMu) / distribution.mBeta;
 		var number1 = (1 - Math.exp(-Math.exp(s))) * Math.pow(10,3);
 		champuru_Worker.mMsgs.add("<td>" + i + "</td><td>" + score.index + "</td><td>" + score.score + "</td><td>" + score.matches + "</td><td>" + score.mismatches + "</td><td>" + ("" + Math.round(number) / Math.pow(10,3)) + "</td><td>" + ("" + Math.round(number1) / Math.pow(10,3)) + "</td>");
-		champuru_Worker.mMsgs.add("</tr>");
+		champuru_Worker.mMsgs.add("<td><input type='checkbox' onchange='toggle_phighlight(this, \"c" + score.index + "\", " + score.score + ");'></tr>");
 		var tmp = i++ <= 5;
 	}
-	champuru_Worker.mMsgs.add("<tr id='scoreTableLine'><td colspan='7' style='text-align: center;'><button id='showMoreButton' onclick='showMore();'>Show more</button><button id='showLessButton' onclick='showLess();'>Show less</button></td></tr>");
+	champuru_Worker.mMsgs.add("<tr id='scoreTableLine'><td colspan='8' style='text-align: center;'><button id='showMoreButton' onclick='showMore();'>Show more</button><button id='showLessButton' onclick='showLess();'>Show less</button></td></tr>");
 	champuru_Worker.mMsgs.add("</table>");
 	champuru_Worker.mMsgs.add("<p>Here is a plot of the shift calculation result:</p>");
 	champuru_Worker.mMsgs.add(scorePlot);

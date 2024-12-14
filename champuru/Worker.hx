@@ -139,7 +139,7 @@ class Worker
         out("' title='table.tsv' download='table.tsv'>Download</a>lists the best compatibility scores and their positions:</p>");
         out("<table class='scoreTable center'>");
         out("<tr class='header'>");
-        out("<td>#</td><td>Offset</td><td>Score</td><td>Matches</td><td>Mismatches</td><td>P(score)</td><td>P(higher score)</td>");
+        out("<td>#</td><td>Offset</td><td>Score</td><td>Matches</td><td>Mismatches</td><td>P(score)</td><td>P(higher score)</td><td>Highlight</td>");
         out("</tr>");
         out2("Best scores:");
         out2("#\tIndex\tScore\tMatches\tMismatches\tP(score)\tP(higher score)");
@@ -147,13 +147,13 @@ class Worker
         for (score in sortedScores) {
             out("<tr id='scoreTableLine" + i + "' class='" + ((i % 2 == 0) ? "odd" : "even") + ((i >= 6) ? " hiddenLine" : "") + "' onmouseover='highlight(\"c" + score.index + "\", " + score.score + ")' onmouseout='removeHighlight(\"c" + score.index + "\")'>");
             out("<td>" + i + "</td><td>" + score.index + "</td><td>" + score.score + "</td><td>" +  score.matches + "</td><td>" + score.mismatches + "</td><td>" + formatFloat(distribution.getProbabilityForScore(score.score)) + "</td><td>" + formatFloat(distribution.getProbabilityForHigherScore(score.score)) + "</td>");
-            out("</tr>");
+            out("<td><input type='checkbox' onchange='toggle_phighlight(this, \"c" + score.index + "\", " + score.score + ");'></tr>");
             if (i <= 5) {
                 out2("" + i + "\t" + score.index + "\t" + score.score + "\t" + score.matches + "\t" + score.mismatches + "\t" + formatFloat(distribution.getProbabilityForScore(score.score)) + "\t" + formatFloat(distribution.getProbabilityForHigherScore(score.score)));
             }
             i++;
         }
-        out("<tr id='scoreTableLine'><td colspan='7' style='text-align: center;'><button id='showMoreButton' onclick='showMore();'>Show more</button><button id='showLessButton' onclick='showLess();'>Show less</button></td></tr>");
+        out("<tr id='scoreTableLine'><td colspan='8' style='text-align: center;'><button id='showMoreButton' onclick='showMore();'>Show more</button><button id='showLessButton' onclick='showLess();'>Show less</button></td></tr>");
         out("</table>");
         out("<p>Here is a plot of the shift calculation result:</p>");
         out(scorePlot);
