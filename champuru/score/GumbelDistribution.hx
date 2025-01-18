@@ -62,16 +62,18 @@ class GumbelDistribution
     /**
      * Calculate the probability of a particular score.
      */
-    public inline function getProbabilityForScore(score:Float):Float {
+    public inline function getProbabilityForScore(score:Float, alpha:Int):Float {
         var z:Float = (score - mMu) / mBeta;
-        return 1.0 / mBeta * Math.exp(-(z + Math.exp(-z)));
+        var p:Float = 1.0 / mBeta * Math.exp(-(z + Math.exp(-z)));
+        return Math.min(p * alpha, 1);
     }
     
     /**
      * Calculate the probability of getting a higher score.
      */
-    public inline function getProbabilityForHigherScore(score:Float):Float {
+    public inline function getProbabilityForHigherScore(score:Float, alpha:Int):Float {
         var s:Float = -(score - mMu) / mBeta;
-        return 1 - Math.exp(-Math.exp(s));
+        var p:Float = 1 - Math.exp(-Math.exp(s));
+        return Math.min(p * alpha, 1);
     }
 }

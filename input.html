@@ -91,6 +91,16 @@ However this score correction method seems to work less good on short input sequ
                         This can take some time which is why this checkbox is not checked by default.</p>
                     </td>
                 </tr>
+                <tr class="option">
+                    <td>Bonferroni correction:</td>
+                    <td>&nbsp;&nbsp;&nbsp;</td>
+                    <td><input type="checkbox" id="statisticCorrection" autocomplete="off" checked="checked"></td>
+                </tr>
+                <tr class="description">
+                    <td colspan="3">
+                        <p>Whether to perform a Bonferroni correction for all calculated p-values.</p>
+                    </td>
+                </tr>
             </table>
             <span class="middle">
                 <button onclick="calculate()">Calculate</button>
@@ -196,6 +206,7 @@ function calculate() {
     }
     
     var searchForAlternativeSolutions = document.getElementById("searchForAlternativeSolutions").checked;
+    var statisticCorrection = document.getElementById("statisticCorrection").checked;
 
     var resultArea = document.getElementById("resultArea");
     resultArea.innerText = "Calculating ... Please wait ... Results will appear here!";
@@ -208,7 +219,7 @@ function calculate() {
         resultArea.innerHTML = data.result;
         worker.terminate();
     });
-    worker.postMessage({"fwd" : fwd, "rev" : rev, "score" : score, "i" : 0, "j" : 0, "useOffsets" : false, "searchForAlternativeSolutions" : searchForAlternativeSolutions});
+    worker.postMessage({"fwd" : fwd, "rev" : rev, "score" : score, "i" : 0, "j" : 0, "useOffsets" : false, "searchForAlternativeSolutions" : searchForAlternativeSolutions, "statisticCorrection" : statisticCorrection});
 }
 
 function askForOffset(title, fwd, rev) {

@@ -122,20 +122,9 @@ haxe_ds_List.prototype = {
 };
 var champuru_Worker = function() { };
 champuru_Worker.__name__ = true;
-champuru_Worker.out = function(s) {
-	champuru_Worker.mMsgs.add(s);
-};
-champuru_Worker.out2 = function(s) {
-};
-champuru_Worker.timeToStr = function(f) {
-	return "" + Math.round(f * 1000);
-};
-champuru_Worker.formatFloat = function(f) {
-	var number = f * Math.pow(10,3);
-	return "" + Math.round(number) / Math.pow(10,3);
-};
-champuru_Worker.generateHtml = function(fwd,rev,scoreCalculationMethod,iOffset,jOffset,useThisOffsets,searchForAlternativeSolutions) {
+champuru_Worker.generateHtml = function(fwd,rev,scoreCalculationMethod,iOffset,jOffset,useThisOffsets,searchForAlternativeSolutions,statisticCorrection) {
 	champuru_Worker.mMsgs.clear();
+	var alpha = statisticCorrection ? fwd.length + rev.length - 1 : 1;
 	champuru_Worker.mMsgs.add("<fieldset>");
 	champuru_Worker.mMsgs.add("<legend>Input</legend>");
 	champuru_Worker.mMsgs.add("<p>Forward sequence of length " + fwd.length + ": <span id='input1' class='sequence'>");
@@ -256,13 +245,15 @@ champuru_Worker.generateHtml = function(fwd,rev,scoreCalculationMethod,iOffset,j
 		var score = sortedScores[_g];
 		++_g;
 		var z = (score.score - distribution.mMu) / distribution.mBeta;
+		var p = 1.0 / distribution.mBeta * Math.exp(-(z + Math.exp(-z)));
 		var s = -(score.score - distribution.mMu) / distribution.mBeta;
-		sortedScoresStringList.add(i + "\t" + score.index + "\t" + score.score + "\t" + score.matches + "\t" + score.mismatches + "\t" + 1.0 / distribution.mBeta * Math.exp(-(z + Math.exp(-z))) + "\t" + (1 - Math.exp(-Math.exp(s))));
+		var p1 = 1 - Math.exp(-Math.exp(s));
+		sortedScoresStringList.add(i + "\t" + score.index + "\t" + score.score + "\t" + score.matches + "\t" + score.mismatches + "\t" + Math.min(p * alpha,1) + "\t" + Math.min(p1 * alpha,1));
 		++i;
 	}
 	var sortedScoresString = sortedScoresStringList.join("\n");
 	var sortedScoresStringB64 = haxe_crypto_Base64.encode(haxe_io_Bytes.ofString(sortedScoresString));
-	var vis = new champuru_score_ScoreListVisualizer(scores,sortedScores);
+	var vis = new champuru_score_ScoreListVisualizer(scores,sortedScores,alpha);
 	var scorePlot = vis.genScorePlot();
 	var histPlot = vis.genScorePlotHist(distribution);
 	champuru_Worker.mMsgs.add("<fieldset>");
@@ -281,9 +272,11 @@ champuru_Worker.generateHtml = function(fwd,rev,scoreCalculationMethod,iOffset,j
 		++_g;
 		champuru_Worker.mMsgs.add("<tr id='scoreTableLine" + i + "' class='" + (i % 2 == 0 ? "odd" : "even") + (i >= 6 ? " hiddenLine" : "") + "' onmouseover='highlight(\"c" + score.index + "\", " + score.score + ")' onmouseout='removeHighlight(\"c" + score.index + "\")'>");
 		var z = (score.score - distribution.mMu) / distribution.mBeta;
-		var number = 1.0 / distribution.mBeta * Math.exp(-(z + Math.exp(-z))) * Math.pow(10,3);
+		var p = 1.0 / distribution.mBeta * Math.exp(-(z + Math.exp(-z)));
+		var number = Math.min(p * alpha,1) * Math.pow(10,3);
 		var s = -(score.score - distribution.mMu) / distribution.mBeta;
-		var number1 = (1 - Math.exp(-Math.exp(s))) * Math.pow(10,3);
+		var p1 = 1 - Math.exp(-Math.exp(s));
+		var number1 = Math.min(p1 * alpha,1) * Math.pow(10,3);
 		champuru_Worker.mMsgs.add("<td>" + i + "</td><td>" + score.index + "</td><td>" + score.score + "</td><td>" + score.matches + "</td><td>" + score.mismatches + "</td><td>" + ("" + Math.round(number) / Math.pow(10,3)) + "</td><td>" + ("" + Math.round(number1) / Math.pow(10,3)) + "</td>");
 		champuru_Worker.mMsgs.add("<td><input type='checkbox' onchange='toggle_phighlight(this, \"c" + score.index + "\", " + score.score + ");'></tr>");
 		var tmp = i++ <= 5;
@@ -684,11 +677,12 @@ champuru_Worker.onMessage = function(e) {
 		var j = js_Boot.__cast(e.data.j , Int);
 		var use = js_Boot.__cast(e.data.useOffsets , Bool);
 		var searchForAlternativeSolutions = js_Boot.__cast(e.data.searchForAlternativeSolutions , Bool);
-		var result = champuru_Worker.generateHtml(fwd,rev,scoreCalculationMethod,i,j,use,searchForAlternativeSolutions);
+		var statisticCorrection = js_Boot.__cast(e.data.statisticCorrection , Bool);
+		var result = champuru_Worker.generateHtml(fwd,rev,scoreCalculationMethod,i,j,use,searchForAlternativeSolutions,statisticCorrection);
 		champuru_Worker.workerScope.postMessage(result);
 	} catch( _g ) {
 		var e = haxe_Exception.caught(_g);
-		console.log("champuru/Worker.hx:468:",e);
+		console.log("champuru/Worker.hx:471:",e);
 		champuru_Worker.workerScope.postMessage({ result : "The following error occurred: " + Std.string(e)});
 	}
 };
@@ -743,26 +737,6 @@ champuru_base_NucleotideSequence.prototype = {
 		}
 		return result.join("");
 	}
-	,iterator: function() {
-		var seq = new haxe_ds_List();
-		var _g = 0;
-		var _g1 = this.mLength;
-		while(_g < _g1) {
-			var i = _g++;
-			var c = this.mSequence.h[i];
-			seq.add(c);
-		}
-		return new haxe_ds__$List_ListIterator(seq.h);
-	}
-	,length: function() {
-		return this.mLength;
-	}
-	,get: function(i) {
-		if(!(0 <= i && i < this.mLength)) {
-			throw haxe_Exception.thrown("Position " + i + " out of range [0," + this.mLength + "(");
-		}
-		return this.mSequence.h[i];
-	}
 	,replace: function(i,c) {
 		if(c == null) {
 			throw haxe_Exception.thrown("c must not be null!");
@@ -771,45 +745,6 @@ champuru_base_NucleotideSequence.prototype = {
 			throw haxe_Exception.thrown("Position " + i + " out of range [0," + this.mLength + "(");
 		}
 		this.mSequence.h[i] = c;
-	}
-	,reverse: function() {
-		var seq = new haxe_ds_List();
-		var i = this.mLength - 1;
-		while(i <= 0) {
-			var c = this.mSequence.h[i];
-			seq.add(c);
-			--i;
-		}
-		var result = new champuru_base_NucleotideSequence(seq);
-		return result;
-	}
-	,getReverseComplement: function() {
-		var seq = new haxe_ds_List();
-		var i = this.mLength - 1;
-		while(i <= 0) {
-			var c = this.mSequence.h[i];
-			var code = 0;
-			code += (c.mCode & champuru_base_SingleNucleotide.sAdenine) != 0 ? champuru_base_SingleNucleotide.sThymine : 0;
-			code += (c.mCode & champuru_base_SingleNucleotide.sCytosine) != 0 ? champuru_base_SingleNucleotide.sGuanine : 0;
-			code += (c.mCode & champuru_base_SingleNucleotide.sGuanine) != 0 ? champuru_base_SingleNucleotide.sCytosine : 0;
-			code += (c.mCode & champuru_base_SingleNucleotide.sThymine) != 0 ? champuru_base_SingleNucleotide.sAdenine : 0;
-			c = new champuru_base_SingleNucleotide(c.mCode,c.mQuality);
-			seq.add(c);
-			--i;
-		}
-		var result = new champuru_base_NucleotideSequence(seq);
-		return result;
-	}
-	,clone: function() {
-		var seq = new haxe_ds_List();
-		var _g = 0;
-		var _g1 = this.mLength;
-		while(_g < _g1) {
-			var i = _g++;
-			var c = this.mSequence.h[i];
-			seq.add(c);
-		}
-		return new champuru_base_NucleotideSequence(seq);
 	}
 	,countGaps: function() {
 		var count = 0;
@@ -856,30 +791,6 @@ champuru_base_NucleotideSequence.prototype = {
 		}
 		return count;
 	}
-	,countNotPolymorphisms: function(minQual) {
-		if(minQual == null) {
-			minQual = -1;
-		}
-		var count = 0;
-		var seq = new haxe_ds_List();
-		var _g = 0;
-		var _g1 = this.mLength;
-		while(_g < _g1) {
-			var i = _g++;
-			var c = this.mSequence.h[i];
-			seq.add(c);
-		}
-		var _g_head = seq.h;
-		while(_g_head != null) {
-			var val = _g_head.item;
-			_g_head = _g_head.next;
-			var c = val;
-			if(c.isNotPolymorphism() && c.mQuality >= minQual) {
-				++count;
-			}
-		}
-		return count;
-	}
 	,__class__: champuru_base_NucleotideSequence
 };
 var champuru_base_SingleNucleotide = function(code,quality) {
@@ -892,13 +803,6 @@ var champuru_base_SingleNucleotide = function(code,quality) {
 	this.mQuality = quality;
 };
 champuru_base_SingleNucleotide.__name__ = true;
-champuru_base_SingleNucleotide.createNucleotideByBools = function(adenine,cytosine,thymine,guanine,quality) {
-	if(quality == null) {
-		quality = 100;
-	}
-	var code = (adenine ? champuru_base_SingleNucleotide.sAdenine : 0) + (cytosine ? champuru_base_SingleNucleotide.sCytosine : 0) + (thymine ? champuru_base_SingleNucleotide.sThymine : 0) + (guanine ? champuru_base_SingleNucleotide.sGuanine : 0);
-	return new champuru_base_SingleNucleotide(code,quality);
-};
 champuru_base_SingleNucleotide.createNucleotideByIUPACCode = function(s,origQuality) {
 	if(origQuality == null) {
 		origQuality = -1;
@@ -979,58 +883,6 @@ champuru_base_SingleNucleotide.prototype = {
 		}
 		return result;
 	}
-	,getCode: function() {
-		return this.mCode;
-	}
-	,isGap: function() {
-		return this.mCode == 0;
-	}
-	,canStandForAdenine: function() {
-		return (this.mCode & champuru_base_SingleNucleotide.sAdenine) != 0;
-	}
-	,isAdenine: function() {
-		return this.mCode == champuru_base_SingleNucleotide.sAdenine;
-	}
-	,canStandForCytosine: function() {
-		return (this.mCode & champuru_base_SingleNucleotide.sCytosine) != 0;
-	}
-	,isCytosine: function() {
-		return this.mCode == champuru_base_SingleNucleotide.sCytosine;
-	}
-	,canStandForThymine: function() {
-		return (this.mCode & champuru_base_SingleNucleotide.sThymine) != 0;
-	}
-	,isThymine: function() {
-		return this.mCode == champuru_base_SingleNucleotide.sThymine;
-	}
-	,canStandForGuanine: function() {
-		return (this.mCode & champuru_base_SingleNucleotide.sGuanine) != 0;
-	}
-	,isGuanine: function() {
-		return this.mCode == champuru_base_SingleNucleotide.sGuanine;
-	}
-	,isN: function() {
-		return this.mCode == champuru_base_SingleNucleotide.sAdenine + champuru_base_SingleNucleotide.sCytosine + champuru_base_SingleNucleotide.sThymine + champuru_base_SingleNucleotide.sGuanine;
-	}
-	,getQuality: function() {
-		return this.mQuality;
-	}
-	,countPolymorphism: function() {
-		var i = 0;
-		if((this.mCode & champuru_base_SingleNucleotide.sAdenine) != 0) {
-			++i;
-		}
-		if((this.mCode & champuru_base_SingleNucleotide.sCytosine) != 0) {
-			++i;
-		}
-		if((this.mCode & champuru_base_SingleNucleotide.sThymine) != 0) {
-			++i;
-		}
-		if((this.mCode & champuru_base_SingleNucleotide.sGuanine) != 0) {
-			++i;
-		}
-		return i;
-	}
 	,isNotPolymorphism: function() {
 		if(this.mCode == 0) {
 			return true;
@@ -1048,92 +900,6 @@ champuru_base_SingleNucleotide.prototype = {
 			return true;
 		}
 		return false;
-	}
-	,isPolymorphism: function() {
-		return !this.isNotPolymorphism();
-	}
-	,getReverseComplement: function() {
-		var code = 0;
-		code += (this.mCode & champuru_base_SingleNucleotide.sAdenine) != 0 ? champuru_base_SingleNucleotide.sThymine : 0;
-		code += (this.mCode & champuru_base_SingleNucleotide.sCytosine) != 0 ? champuru_base_SingleNucleotide.sGuanine : 0;
-		code += (this.mCode & champuru_base_SingleNucleotide.sGuanine) != 0 ? champuru_base_SingleNucleotide.sCytosine : 0;
-		code += (this.mCode & champuru_base_SingleNucleotide.sThymine) != 0 ? champuru_base_SingleNucleotide.sAdenine : 0;
-		return new champuru_base_SingleNucleotide(this.mCode,this.mQuality);
-	}
-	,union: function(o) {
-		var code = this.mCode & o.mCode;
-		var quality = Math.min(this.mQuality,o.mQuality);
-		return new champuru_base_SingleNucleotide(code,quality);
-	}
-	,intersection: function(o) {
-		var code = this.mCode | o.mCode;
-		var quality = Math.min(this.mQuality,o.mQuality);
-		return new champuru_base_SingleNucleotide(code,quality);
-	}
-	,difference: function(o) {
-		var code = this.mCode ^ o.mCode;
-		var quality = Math.min(this.mQuality,o.mQuality);
-		return new champuru_base_SingleNucleotide(code,quality);
-	}
-	,isSubset: function(o) {
-		if((this.mCode & champuru_base_SingleNucleotide.sAdenine) != 0) {
-			if((o.mCode & champuru_base_SingleNucleotide.sAdenine) == 0) {
-				return false;
-			}
-		}
-		if((this.mCode & champuru_base_SingleNucleotide.sCytosine) != 0) {
-			if((o.mCode & champuru_base_SingleNucleotide.sCytosine) == 0) {
-				return false;
-			}
-		}
-		if((this.mCode & champuru_base_SingleNucleotide.sGuanine) != 0) {
-			if((o.mCode & champuru_base_SingleNucleotide.sGuanine) == 0) {
-				return false;
-			}
-		}
-		if((this.mCode & champuru_base_SingleNucleotide.sThymine) != 0) {
-			if((o.mCode & champuru_base_SingleNucleotide.sThymine) == 0) {
-				return false;
-			}
-		}
-		return true;
-	}
-	,isSuperset: function(o) {
-		if((o.mCode & champuru_base_SingleNucleotide.sAdenine) != 0) {
-			if((this.mCode & champuru_base_SingleNucleotide.sAdenine) == 0) {
-				return false;
-			}
-		}
-		if((o.mCode & champuru_base_SingleNucleotide.sCytosine) != 0) {
-			if((this.mCode & champuru_base_SingleNucleotide.sCytosine) == 0) {
-				return false;
-			}
-		}
-		if((o.mCode & champuru_base_SingleNucleotide.sGuanine) != 0) {
-			if((this.mCode & champuru_base_SingleNucleotide.sGuanine) == 0) {
-				return false;
-			}
-		}
-		if((o.mCode & champuru_base_SingleNucleotide.sThymine) != 0) {
-			if((this.mCode & champuru_base_SingleNucleotide.sThymine) == 0) {
-				return false;
-			}
-		}
-		return true;
-	}
-	,isDisjoint: function(o) {
-		var code = this.mCode & o.mCode;
-		return code == 0;
-	}
-	,isOverlapping: function(o) {
-		var code = this.mCode & o.mCode;
-		return code != 0;
-	}
-	,clone: function(newQuality) {
-		if(newQuality == null) {
-			newQuality = -1;
-		}
-		return new champuru_base_SingleNucleotide(this.mCode,newQuality == -1 ? this.mQuality : newQuality);
 	}
 	,equals: function(o,alsoEq) {
 		if(alsoEq == null) {
@@ -1340,20 +1106,6 @@ champuru_perl_PerlChampuruReimplementation.inter = function(a,b) {
 		return "_";
 	} else {
 		return champuru_perl_PerlChampuruReimplementation.rev_code.h[intersection];
-	}
-};
-champuru_perl_PerlChampuruReimplementation.max = function(a,b) {
-	if(a > b) {
-		return a;
-	} else {
-		return b;
-	}
-};
-champuru_perl_PerlChampuruReimplementation.min = function(a,b) {
-	if(a < b) {
-		return a;
-	} else {
-		return b;
 	}
 };
 champuru_perl_PerlChampuruReimplementation.runChampuru = function(forward,reverse,opt_c) {
@@ -1749,11 +1501,6 @@ champuru_reconstruction_SequenceChecker.prototype = {
 		}
 		return false;
 	}
-	,addToListIfNotPresent: function(l,ele) {
-		if(!this.listContains(l,ele)) {
-			l.push(ele);
-		}
-	}
 	,check: function(s1,s2) {
 		var pFbest = new haxe_ds_List();
 		var pRbest = new haxe_ds_List();
@@ -1992,183 +1739,6 @@ champuru_reconstruction_SequenceReconstructor.reconstruct = function(seq1,seq2) 
 	}
 	return { seq1 : seq1, seq2 : seq2};
 };
-champuru_reconstruction_SequenceReconstructor.reconstruct2 = function(seq1,seq2,round) {
-	if(round == null) {
-		round = 0;
-	}
-	var seq1begin = champuru_reconstruction_SequenceReconstructor.getBegin(seq1);
-	var seq2begin = champuru_reconstruction_SequenceReconstructor.getBegin(seq2);
-	var toChange = new haxe_ds_List();
-	var round = 1;
-	var seqLen1 = seq1.mLength;
-	var seqLen2 = seq2.mLength;
-	var seqLen = seqLen1 > seqLen2 ? seqLen2 : seqLen1;
-	++round;
-	var _g = 0;
-	var _g1 = seqLen;
-	while(_g < _g1) {
-		var j = _g++;
-		var idx1 = seq1begin + j;
-		var idx2 = seq2begin + j;
-		var tmp;
-		var tmp1;
-		if(!(idx1 >= seqLen1 || idx2 >= seqLen2)) {
-			if(!(0 <= idx1 && idx1 < seq1.mLength)) {
-				throw haxe_Exception.thrown("Position " + idx1 + " out of range [0," + seq1.mLength + "(");
-			}
-			tmp1 = seq1.mSequence.h[idx1].mQuality < 0.75;
-		} else {
-			tmp1 = true;
-		}
-		if(!tmp1) {
-			if(!(0 <= idx2 && idx2 < seq2.mLength)) {
-				throw haxe_Exception.thrown("Position " + idx2 + " out of range [0," + seq2.mLength + "(");
-			}
-			tmp = seq2.mSequence.h[idx2].mQuality < 0.75;
-		} else {
-			tmp = true;
-		}
-		if(!tmp) {
-			if(!(0 <= idx1 && idx1 < seq1.mLength)) {
-				throw haxe_Exception.thrown("Position " + idx1 + " out of range [0," + seq1.mLength + "(");
-			}
-			var seq1n = seq1.mSequence.h[idx1];
-			if(!(0 <= idx2 && idx2 < seq2.mLength)) {
-				throw haxe_Exception.thrown("Position " + idx2 + " out of range [0," + seq2.mLength + "(");
-			}
-			var seq2n = seq2.mSequence.h[idx2];
-			if(!seq1n.isNotPolymorphism() || !seq2n.isNotPolymorphism()) {
-				if(seq1n.mCode != seq2n.mCode) {
-					var code = seq1n.mCode & seq2n.mCode;
-					if(code != 0) {
-						if(seq1n.mCode > seq2n.mCode) {
-							var code1 = seq1n.mCode - seq2n.mCode;
-							var newN = new champuru_base_SingleNucleotide(code1);
-							toChange.add({ isSeq1 : true, pos : idx1, newNN : newN});
-						} else {
-							var code2 = seq2n.mCode - seq1n.mCode;
-							var newN1 = new champuru_base_SingleNucleotide(code2);
-							toChange.add({ isSeq1 : false, pos : idx2, newNN : newN1});
-						}
-					}
-				}
-			}
-		}
-	}
-	console.log("champuru/reconstruction/SequenceReconstructor.hx:218:","Length of toChange " + toChange.length);
-	var result = new haxe_ds_List();
-	if(toChange.length > 0) {
-		var _g2_head = toChange.h;
-		while(_g2_head != null) {
-			var val = _g2_head.item;
-			_g2_head = _g2_head.next;
-			var change = val;
-			if(result.length > 5) {
-				break;
-			}
-			var r = new haxe_ds_List();
-			if(change.isSeq1) {
-				var seq1Clone = seq1.clone();
-				seq1Clone.replace(change.pos,change.newNN);
-				r = champuru_reconstruction_SequenceReconstructor.reconstruct2(seq1Clone,seq2,round++);
-			} else {
-				var seq2Clone = seq2.clone();
-				seq2Clone.replace(change.pos,change.newNN);
-				r = champuru_reconstruction_SequenceReconstructor.reconstruct2(seq1,seq2Clone,round++);
-			}
-			var _g2_head1 = r.h;
-			while(_g2_head1 != null) {
-				var val1 = _g2_head1.item;
-				_g2_head1 = _g2_head1.next;
-				var e = val1;
-				if(result.length > 5) {
-					break;
-				}
-				var _this = e.seq1;
-				var result1 = new haxe_ds_List();
-				var _g = 0;
-				var _g1 = _this.mLength;
-				while(_g < _g1) {
-					var i = _g++;
-					var c = _this.mSequence.h[i];
-					var s = c.toIUPACCode();
-					result1.add(s);
-				}
-				var s1 = result1.join("");
-				var _this1 = e.seq2;
-				var result2 = new haxe_ds_List();
-				var _g2 = 0;
-				var _g3 = _this1.mLength;
-				while(_g2 < _g3) {
-					var i1 = _g2++;
-					var c1 = _this1.mSequence.h[i1];
-					var s2 = c1.toIUPACCode();
-					result2.add(s2);
-				}
-				var s21 = result2.join("");
-				var found = false;
-				var _g2_head2 = result.h;
-				while(_g2_head2 != null) {
-					var val2 = _g2_head2.item;
-					_g2_head2 = _g2_head2.next;
-					var ele = val2;
-					var _this2 = e.seq1;
-					var result3 = new haxe_ds_List();
-					var _g4 = 0;
-					var _g5 = _this2.mLength;
-					while(_g4 < _g5) {
-						var i2 = _g4++;
-						var c2 = _this2.mSequence.h[i2];
-						var s3 = c2.toIUPACCode();
-						result3.add(s3);
-					}
-					var s1ele = result3.join("");
-					var _this3 = e.seq2;
-					var result4 = new haxe_ds_List();
-					var _g6 = 0;
-					var _g7 = _this3.mLength;
-					while(_g6 < _g7) {
-						var i3 = _g6++;
-						var c3 = _this3.mSequence.h[i3];
-						var s4 = c3.toIUPACCode();
-						result4.add(s4);
-					}
-					var s2ele = result4.join("");
-					if(s1 == s1ele && s21 == s2ele) {
-						found = true;
-						break;
-					}
-				}
-				if(!found) {
-					result.add(e);
-				}
-			}
-		}
-	} else {
-		var result1 = new haxe_ds_List();
-		var _g = 0;
-		var _g1 = seq1.mLength;
-		while(_g < _g1) {
-			var i = _g++;
-			var c = seq1.mSequence.h[i];
-			var s = c.toIUPACCode();
-			result1.add(s);
-		}
-		var tmp = "Solution: " + result1.join("") + " ";
-		var result1 = new haxe_ds_List();
-		var _g = 0;
-		var _g1 = seq2.mLength;
-		while(_g < _g1) {
-			var i = _g++;
-			var c = seq2.mSequence.h[i];
-			var s = c.toIUPACCode();
-			result1.add(s);
-		}
-		console.log("champuru/reconstruction/SequenceReconstructor.hx:256:",tmp + result1.join("") + " " + round);
-		result.add({ seq1 : seq1, seq2 : seq2});
-	}
-	return result;
-};
 var champuru_score_AScoreCalculator = function() {
 };
 champuru_score_AScoreCalculator.__name__ = true;
@@ -2192,13 +1762,7 @@ var champuru_score_AmbiguityCorrectionScoreCalculator = function() {
 champuru_score_AmbiguityCorrectionScoreCalculator.__name__ = true;
 champuru_score_AmbiguityCorrectionScoreCalculator.__super__ = champuru_score_AScoreCalculator;
 champuru_score_AmbiguityCorrectionScoreCalculator.prototype = $extend(champuru_score_AScoreCalculator.prototype,{
-	getName: function() {
-		return "Ambiguity correction";
-	}
-	,getDescription: function() {
-		return "A modification of the score correction method described in the Champuru 1.0 paper. The score will get corrected for the fact that ambiguous characters (e.g. W) can match multiple other characters (e.g. A, T). Preliminary results suggests that this score calculation method works better when the reconstructed consensus sequences contain a lot of ambiguities. However this score correction method seems to work less good on short input sequences.";
-	}
-	,calcScore: function(i,fwd,rev) {
+	calcScore: function(i,fwd,rev) {
 		var matches = 0;
 		var fullMatches = 0;
 		var mismatches = 0;
@@ -2241,27 +1805,8 @@ var champuru_score_GumbelDistribution = function(mu,beta) {
 	this.mBeta = beta;
 };
 champuru_score_GumbelDistribution.__name__ = true;
-champuru_score_GumbelDistribution.getEstimatedGumbelDistribution = function(mean,deviation) {
-	var beta = Math.sqrt(6) * deviation / Math.PI;
-	var mu = mean - champuru_score_GumbelDistribution.eulerMascheroniConst * beta;
-	return new champuru_score_GumbelDistribution(mu,beta);
-};
 champuru_score_GumbelDistribution.prototype = {
-	getMu: function() {
-		return this.mMu;
-	}
-	,getBeta: function() {
-		return this.mBeta;
-	}
-	,getProbabilityForScore: function(score) {
-		var z = (score - this.mMu) / this.mBeta;
-		return 1.0 / this.mBeta * Math.exp(-(z + Math.exp(-z)));
-	}
-	,getProbabilityForHigherScore: function(score) {
-		var s = -(score - this.mMu) / this.mBeta;
-		return 1 - Math.exp(-Math.exp(s));
-	}
-	,__class__: champuru_score_GumbelDistribution
+	__class__: champuru_score_GumbelDistribution
 };
 var champuru_score_GumbelDistributionEstimator = function(seq1,seq2) {
 	this.mSeq1 = seq1;
@@ -2269,134 +1814,7 @@ var champuru_score_GumbelDistributionEstimator = function(seq1,seq2) {
 };
 champuru_score_GumbelDistributionEstimator.__name__ = true;
 champuru_score_GumbelDistributionEstimator.prototype = {
-	shuffleSequence: function(s) {
-		var copySequence = new haxe_ds_List();
-		var sLen = s.mLength;
-		var _g = 0;
-		var _g1 = sLen;
-		while(_g < _g1) {
-			var i = _g++;
-			var randomPos = Math.floor(Math.random() * sLen);
-			if(!(0 <= randomPos && randomPos < s.mLength)) {
-				throw haxe_Exception.thrown("Position " + randomPos + " out of range [0," + s.mLength + "(");
-			}
-			var newNN = s.mSequence.h[randomPos];
-			copySequence.add(newNN);
-		}
-		var result = new champuru_base_NucleotideSequence(copySequence);
-		return result;
-	}
-	,calculateMean: function(scores) {
-		var summe = 0.0;
-		var _g_head = scores.h;
-		while(_g_head != null) {
-			var val = _g_head.item;
-			_g_head = _g_head.next;
-			var score = val;
-			summe += score;
-		}
-		return summe / scores.length;
-	}
-	,calculateVar: function(scores,mean) {
-		var summe = 0.0;
-		var _g_head = scores.h;
-		while(_g_head != null) {
-			var val = _g_head.item;
-			_g_head = _g_head.next;
-			var score = val;
-			var diff = score - mean;
-			summe += diff * diff;
-		}
-		return summe / (scores.length - 1);
-	}
-	,randI: function(a,b) {
-		var result = 0;
-		var rand = Math.random();
-		if(rand > 0.5) {
-			result = Math.floor(a * Math.random());
-		} else {
-			result = Math.floor(b * Math.random());
-		}
-		return result;
-	}
-	,calculate: function(scoreCalculator) {
-		var scores = new haxe_ds_List();
-		var _g = 0;
-		while(_g < 20) {
-			var i = _g++;
-			var _g1 = 0;
-			while(_g1 < 100) {
-				var j = _g1++;
-				var s = this.mSeq1;
-				var copySequence = new haxe_ds_List();
-				var sLen = s.mLength;
-				var _g2 = 0;
-				var _g3 = sLen;
-				while(_g2 < _g3) {
-					var i1 = _g2++;
-					var randomPos = Math.floor(Math.random() * sLen);
-					if(!(0 <= randomPos && randomPos < s.mLength)) {
-						throw haxe_Exception.thrown("Position " + randomPos + " out of range [0," + s.mLength + "(");
-					}
-					var newNN = s.mSequence.h[randomPos];
-					copySequence.add(newNN);
-				}
-				var result = new champuru_base_NucleotideSequence(copySequence);
-				var randomFwd = result;
-				var s1 = this.mSeq2;
-				var copySequence1 = new haxe_ds_List();
-				var sLen1 = s1.mLength;
-				var _g4 = 0;
-				var _g5 = sLen1;
-				while(_g4 < _g5) {
-					var i2 = _g4++;
-					var randomPos1 = Math.floor(Math.random() * sLen1);
-					if(!(0 <= randomPos1 && randomPos1 < s1.mLength)) {
-						throw haxe_Exception.thrown("Position " + randomPos1 + " out of range [0," + s1.mLength + "(");
-					}
-					var newNN1 = s1.mSequence.h[randomPos1];
-					copySequence1.add(newNN1);
-				}
-				var result1 = new champuru_base_NucleotideSequence(copySequence1);
-				var randomRev = result1;
-				var a = -randomFwd.mLength;
-				var b = randomRev.mLength;
-				var result2 = 0;
-				var rand = Math.random();
-				if(rand > 0.5) {
-					result2 = Math.floor(a * Math.random());
-				} else {
-					result2 = Math.floor(b * Math.random());
-				}
-				var randPos = result2;
-				var score = scoreCalculator.calcScore(randPos,randomFwd,randomRev);
-				scores.add(score.score);
-			}
-		}
-		var summe = 0.0;
-		var _g_head = scores.h;
-		while(_g_head != null) {
-			var val = _g_head.item;
-			_g_head = _g_head.next;
-			var score = val;
-			summe += score;
-		}
-		var mean = summe / scores.length;
-		var summe = 0.0;
-		var _g_head = scores.h;
-		while(_g_head != null) {
-			var val = _g_head.item;
-			_g_head = _g_head.next;
-			var score = val;
-			var diff = score - mean;
-			summe += diff * diff;
-		}
-		var deviation = Math.sqrt(summe / (scores.length - 1));
-		var beta = Math.sqrt(6) * deviation / Math.PI;
-		var mu = mean - champuru_score_GumbelDistribution.eulerMascheroniConst * beta;
-		return new champuru_score_GumbelDistribution(mu,beta);
-	}
-	,__class__: champuru_score_GumbelDistributionEstimator
+	__class__: champuru_score_GumbelDistributionEstimator
 };
 var champuru_score_LongestLengthScoreCalculator = function() {
 	champuru_score_AScoreCalculator.call(this);
@@ -2404,13 +1822,7 @@ var champuru_score_LongestLengthScoreCalculator = function() {
 champuru_score_LongestLengthScoreCalculator.__name__ = true;
 champuru_score_LongestLengthScoreCalculator.__super__ = champuru_score_AScoreCalculator;
 champuru_score_LongestLengthScoreCalculator.prototype = $extend(champuru_score_AScoreCalculator.prototype,{
-	getName: function() {
-		return "Longest Length";
-	}
-	,getDescription: function() {
-		return "Take the longest number of consecutive matching nucleotides as score.";
-	}
-	,calcScore: function(i,fwd,rev) {
+	calcScore: function(i,fwd,rev) {
 		var matches = 0;
 		var mismatches = 0;
 		var fwdCorr = i < 0 ? -i : 0;
@@ -2456,13 +1868,7 @@ var champuru_score_PaperScoreCalculator = function() {
 champuru_score_PaperScoreCalculator.__name__ = true;
 champuru_score_PaperScoreCalculator.__super__ = champuru_score_AScoreCalculator;
 champuru_score_PaperScoreCalculator.prototype = $extend(champuru_score_AScoreCalculator.prototype,{
-	getName: function() {
-		return "Paper";
-	}
-	,getDescription: function() {
-		return "The score correction method described in the Champuru 1.0 paper.";
-	}
-	,calcScore: function(i,fwd,rev) {
+	calcScore: function(i,fwd,rev) {
 		var matches = 0;
 		var mismatches = 0;
 		var fwdCorr = i < 0 ? -i : 0;
@@ -2510,17 +1916,7 @@ champuru_score_ScoreCalculatorList.instance = function() {
 	return champuru_score_ScoreCalculatorList.sInstance;
 };
 champuru_score_ScoreCalculatorList.prototype = {
-	length: function() {
-		return this.mLst.length;
-	}
-	,getDefaultScoreCalculatorIndex: function() {
-		return 1;
-	}
-	,getDefaultScoreCalculator: function() {
-		var idx = 1;
-		return this.mLst[idx];
-	}
-	,getScoreCalculator: function(i) {
+	getScoreCalculator: function(i) {
 		var result = null;
 		if(0 <= i && i < this.mLst.length) {
 			result = this.mLst[i];
@@ -2529,13 +1925,17 @@ champuru_score_ScoreCalculatorList.prototype = {
 	}
 	,__class__: champuru_score_ScoreCalculatorList
 };
-var champuru_score_ScoreListVisualizer = function(scores,sortedScores) {
+var champuru_score_ScoreListVisualizer = function(scores,sortedScores,alpha) {
+	if(alpha == null) {
+		alpha = 1;
+	}
 	this.scores = scores;
 	this.sortedScores = sortedScores;
 	this.high = sortedScores[0].score;
 	var lowScore = sortedScores.pop();
 	sortedScores.push(lowScore);
 	this.low = lowScore.score;
+	this.alpha = alpha;
 };
 champuru_score_ScoreListVisualizer.__name__ = true;
 champuru_score_ScoreListVisualizer.prototype = {
@@ -2622,12 +2022,16 @@ champuru_score_ScoreListVisualizer.prototype = {
 			var to = from[i + 1];
 			var percentage = Math.round(v[i] / this.sortedScores.length * 1000) / 10.0;
 			var z = (fromX - distribution.mMu) / distribution.mBeta;
-			var pval1 = Math.round(1.0 / distribution.mBeta * Math.exp(-(z + Math.exp(-z))) * 1000) / 1000;
+			var p = 1.0 / distribution.mBeta * Math.exp(-(z + Math.exp(-z)));
+			var pval1 = Math.round(Math.min(p * this.alpha,1) * 1000) / 1000;
 			var z1 = (to - distribution.mMu) / distribution.mBeta;
-			var pval2 = Math.round(1.0 / distribution.mBeta * Math.exp(-(z1 + Math.exp(-z1))) * 1000) / 1000;
+			var p1 = 1.0 / distribution.mBeta * Math.exp(-(z1 + Math.exp(-z1)));
+			var pval2 = Math.round(Math.min(p1 * this.alpha,1) * 1000) / 1000;
 			var s = -(fromX - distribution.mMu) / distribution.mBeta;
+			var p2 = 1 - Math.exp(-Math.exp(s));
 			var s1 = -(to - distribution.mMu) / distribution.mBeta;
-			var cdfVal = Math.round((1 - Math.exp(-Math.exp(s)) - (1 - Math.exp(-Math.exp(s1)))) * 1000) / 1000;
+			var p3 = 1 - Math.exp(-Math.exp(s1));
+			var cdfVal = Math.round((Math.min(p2 * this.alpha,1) - Math.min(p3 * this.alpha,1)) * 1000) / 1000;
 			var alertMsg = "From: " + fromX + "\\nTo: " + to + "\\nCount: " + v[i] + " (" + percentage + "%)\\nProbability from: " + pval1 + "-" + pval2 + "\\nCDF: " + cdfVal;
 			result.add("<rect id='histBox" + i + "' from='" + fromX + "' to='" + to + "' x='" + x + "' y='" + y + "' width='20' height='" + h + "' onclick='alert(\"" + alertMsg + "\");' />");
 		}
@@ -2639,36 +2043,44 @@ champuru_score_ScoreListVisualizer.prototype = {
 			var i = _g++;
 			var val = i * hd + this.low;
 			var z = (val - distribution.mMu) / distribution.mBeta;
-			var pval = 1.0 / distribution.mBeta * Math.exp(-(z + Math.exp(-z)));
+			var p = 1.0 / distribution.mBeta * Math.exp(-(z + Math.exp(-z)));
+			var pval = Math.min(p * this.alpha,1);
 			var s = -(val - distribution.mMu) / distribution.mBeta;
-			var d = 1 - Math.exp(-Math.exp(s));
+			var p1 = 1 - Math.exp(-Math.exp(s));
+			var d = Math.min(p1 * this.alpha,1);
 			listOfPoints.add({ x : val, y : pval, i : i, d : d});
 			if(!(highestPVal > pval)) {
 				highestPVal = pval;
 			}
 			val = (i * hd + this.low) * 3 / 4 + ((i + 1) * hd + this.low) / 4;
 			var z1 = (val - distribution.mMu) / distribution.mBeta;
-			pval = 1.0 / distribution.mBeta * Math.exp(-(z1 + Math.exp(-z1)));
+			var p2 = 1.0 / distribution.mBeta * Math.exp(-(z1 + Math.exp(-z1)));
+			pval = Math.min(p2 * this.alpha,1);
 			var s1 = -(val - distribution.mMu) / distribution.mBeta;
-			d = 1 - Math.exp(-Math.exp(s1));
+			var p3 = 1 - Math.exp(-Math.exp(s1));
+			d = Math.min(p3 * this.alpha,1);
 			if(!(highestPVal > pval)) {
 				highestPVal = pval;
 			}
 			listOfPoints.add({ x : val, y : pval, i : i + 0.25, d : d});
 			val = (i * hd + this.low + ((i + 1) * hd + this.low)) / 2;
 			var z2 = (val - distribution.mMu) / distribution.mBeta;
-			pval = 1.0 / distribution.mBeta * Math.exp(-(z2 + Math.exp(-z2)));
+			var p4 = 1.0 / distribution.mBeta * Math.exp(-(z2 + Math.exp(-z2)));
+			pval = Math.min(p4 * this.alpha,1);
 			var s2 = -(val - distribution.mMu) / distribution.mBeta;
-			d = 1 - Math.exp(-Math.exp(s2));
+			var p5 = 1 - Math.exp(-Math.exp(s2));
+			d = Math.min(p5 * this.alpha,1);
 			if(!(highestPVal > pval)) {
 				highestPVal = pval;
 			}
 			listOfPoints.add({ x : val, y : pval, i : i + 0.5, d : d});
 			val = (i * hd + this.low) / 4 + ((i + 1) * hd + this.low) * 3 / 4;
 			var z3 = (val - distribution.mMu) / distribution.mBeta;
-			pval = 1.0 / distribution.mBeta * Math.exp(-(z3 + Math.exp(-z3)));
+			var p6 = 1.0 / distribution.mBeta * Math.exp(-(z3 + Math.exp(-z3)));
+			pval = Math.min(p6 * this.alpha,1);
 			var s3 = -(val - distribution.mMu) / distribution.mBeta;
-			d = 1 - Math.exp(-Math.exp(s3));
+			var p7 = 1 - Math.exp(-Math.exp(s3));
+			d = Math.min(p7 * this.alpha,1);
 			if(!(highestPVal > pval)) {
 				highestPVal = pval;
 			}
@@ -2953,21 +2365,6 @@ var haxe_ds__$List_ListNode = function(item,next) {
 haxe_ds__$List_ListNode.__name__ = true;
 haxe_ds__$List_ListNode.prototype = {
 	__class__: haxe_ds__$List_ListNode
-};
-var haxe_ds__$List_ListIterator = function(head) {
-	this.head = head;
-};
-haxe_ds__$List_ListIterator.__name__ = true;
-haxe_ds__$List_ListIterator.prototype = {
-	hasNext: function() {
-		return this.head != null;
-	}
-	,next: function() {
-		var val = this.head.item;
-		this.head = this.head.next;
-		return val;
-	}
-	,__class__: haxe_ds__$List_ListIterator
 };
 var haxe_ds_StringMap = function() {
 	this.h = Object.create(null);

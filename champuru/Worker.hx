@@ -69,8 +69,10 @@ class Worker
         return "" + (Math.round(number) / Math.pow(10, 3));
     }
 
-    public static function generateHtml(fwd:String, rev:String, scoreCalculationMethod:Int, iOffset:Int, jOffset:Int, useThisOffsets:Bool, searchForAlternativeSolutions:Bool) {
+    public static function generateHtml(fwd:String, rev:String, scoreCalculationMethod:Int, iOffset:Int, jOffset:Int, useThisOffsets:Bool, searchForAlternativeSolutions:Bool, statisticCorrection:Bool) {
         mMsgs.clear();
+        
+        var alpha:Int = (statisticCorrection) ? fwd.length + rev.length - 1 : 1;
         
         out("<fieldset>");
         out("<legend>Input</legend>");
@@ -121,13 +123,13 @@ class Worker
         sortedScoresStringList.add("#\tOffset\tScore\tMatches\tMismatches\tP(score)\tP(higher score)");
         var i:Int = 1;
         for (score in sortedScores) {
-            sortedScoresStringList.add(i + "\t" + score.index + "\t" + score.score + "\t" + score.matches + "\t" + score.mismatches + "\t" + distribution.getProbabilityForScore(score.score) + "\t" + distribution.getProbabilityForHigherScore(score.score));
+            sortedScoresStringList.add(i + "\t" + score.index + "\t" + score.score + "\t" + score.matches + "\t" + score.mismatches + "\t" + distribution.getProbabilityForScore(score.score, alpha) + "\t" + distribution.getProbabilityForHigherScore(score.score, alpha));
             i++;
         }
         var sortedScoresString:String = sortedScoresStringList.join("\n");
         var sortedScoresStringB64:String = Base64.encode(Bytes.ofString(sortedScoresString));
         
-        var vis = new ScoreListVisualizer(scores, sortedScores);
+        var vis = new ScoreListVisualizer(scores, sortedScores, alpha);
         
         var scorePlot:String = vis.genScorePlot();
         var histPlot:String = vis.genScorePlotHist(distribution);
@@ -146,10 +148,10 @@ class Worker
         var i:Int = 1;
         for (score in sortedScores) {
             out("<tr id='scoreTableLine" + i + "' class='" + ((i % 2 == 0) ? "odd" : "even") + ((i >= 6) ? " hiddenLine" : "") + "' onmouseover='highlight(\"c" + score.index + "\", " + score.score + ")' onmouseout='removeHighlight(\"c" + score.index + "\")'>");
-            out("<td>" + i + "</td><td>" + score.index + "</td><td>" + score.score + "</td><td>" +  score.matches + "</td><td>" + score.mismatches + "</td><td>" + formatFloat(distribution.getProbabilityForScore(score.score)) + "</td><td>" + formatFloat(distribution.getProbabilityForHigherScore(score.score)) + "</td>");
+            out("<td>" + i + "</td><td>" + score.index + "</td><td>" + score.score + "</td><td>" +  score.matches + "</td><td>" + score.mismatches + "</td><td>" + formatFloat(distribution.getProbabilityForScore(score.score, alpha)) + "</td><td>" + formatFloat(distribution.getProbabilityForHigherScore(score.score, alpha)) + "</td>");
             out("<td><input type='checkbox' onchange='toggle_phighlight(this, \"c" + score.index + "\", " + score.score + ");'></tr>");
             if (i <= 5) {
-                out2("" + i + "\t" + score.index + "\t" + score.score + "\t" + score.matches + "\t" + score.mismatches + "\t" + formatFloat(distribution.getProbabilityForScore(score.score)) + "\t" + formatFloat(distribution.getProbabilityForHigherScore(score.score)));
+                out2("" + i + "\t" + score.index + "\t" + score.score + "\t" + score.matches + "\t" + score.mismatches + "\t" + formatFloat(distribution.getProbabilityForScore(score.score, alpha)) + "\t" + formatFloat(distribution.getProbabilityForHigherScore(score.score, alpha)));
             }
             i++;
         }
@@ -462,7 +464,8 @@ class Worker
             var j:Int = cast(e.data.j, Int);
             var use:Bool = cast(e.data.useOffsets, Bool);
             var searchForAlternativeSolutions:Bool = cast(e.data.searchForAlternativeSolutions, Bool);
-            var result = generateHtml(fwd, rev, scoreCalculationMethod, i, j, use, searchForAlternativeSolutions); // ""; //doChampuru(fwd, rev, scoreCalculationMethod, i, j, use);
+            var statisticCorrection:Bool = cast(e.data.statisticCorrection, Bool);
+            var result = generateHtml(fwd, rev, scoreCalculationMethod, i, j, use, searchForAlternativeSolutions, statisticCorrection); // ""; //doChampuru(fwd, rev, scoreCalculationMethod, i, j, use, statisticCorrection);
             workerScope.postMessage(result);
         } catch(e) {
             trace(e);
@@ -482,7 +485,7 @@ class Worker
         if (additionalMessage != null) {
             Sys.println(additionalMessage);
         }
-        Sys.println("Usage: python champuru.py -f <forward sequence> -r <reverse sequence> [-m <method as int>] [-o1 <offset1 as int> -o2 <offset as int>]");
+        Sys.println("Usage: python champuru.py -f <forward sequence> -r <reverse sequence> [-m <method as int>] [-o1 <offset1 as int> -o2 <offset as int>] [-noStat]");
         Sys.exit(1);
     }
     public static function parseArgs() {
@@ -497,6 +500,7 @@ class Worker
         var offset1:Int = -1;
         var offset2:Int = -1;
         var useDifferentOffset:Bool = false;
+        var statisticCorrection:Bool = true;
         var i:Int = 0;
         while (i < inp.length) {
             var arg:String = inp[i];
@@ -512,6 +516,8 @@ class Worker
             } else if (arg == "-o2" || arg == "--offset2") {
                 offset2 = Std.parseInt(inp[++i]);
                 useDifferentOffset = true;
+            } else if (arg == "-noStat") {
+                statisticCorrection = false;
             }
             i++;
         }
@@ -521,7 +527,8 @@ class Worker
             method : method,
             offset1 : offset1,
             offset2 : offset2,
-            useDifferentOffset : useDifferentOffset
+            useDifferentOffset : useDifferentOffset,
+            statisticCorrection : statisticCorrection
         };
     }
     
@@ -537,7 +544,7 @@ class Worker
         var j:Int = args.offset2;
         var use:Bool = args.useDifferentOffset;
         var searchForAlternativeSolutions:Bool = false;
-        var result = generateHtml(fwd, rev, scoreCalculationMethod, i, j, use, searchForAlternativeSolutions); // ""; //doChampuru(fwd, rev, scoreCalculationMethod, i, j, use);
+        var result = generateHtml(fwd, rev, scoreCalculationMethod, i, j, use, searchForAlternativeSolutions, args.statisticCorrection); // ""; //doChampuru(fwd, rev, scoreCalculationMethod, i, j, use, args.statisticCorrection);
     }
     #end
 }

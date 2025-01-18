@@ -29,14 +29,16 @@ class ScoreListVisualizer
     var sortedScores:Array<{nr:Int, index:Int, score:Float, matches:Int, mismatches:Int}>;
     var high:Float;
     var low:Float;
+    var alpha:Int;
 
-    public function new(scores:Array<{nr:Int, index:Int, score:Float, matches:Int, mismatches:Int}>, sortedScores:Array<{nr:Int, index:Int, score:Float, matches:Int, mismatches:Int}>) {
+    public function new(scores:Array<{nr:Int, index:Int, score:Float, matches:Int, mismatches:Int}>, sortedScores:Array<{nr:Int, index:Int, score:Float, matches:Int, mismatches:Int}>, ?alpha:Int=1) {
         this.scores = scores;
         this.sortedScores = sortedScores;
         high = sortedScores[0].score;
         var lowScore = sortedScores.pop();
         sortedScores.push(lowScore);
         low = lowScore.score;
+        this.alpha = alpha;
     }
 
     public function genScorePlot():String {
@@ -105,9 +107,9 @@ class ScoreListVisualizer
             var fromX:Float = from[i];
             var to:Float = from[i + 1];
             var percentage:Float = (Math.round(v[i] / sortedScores.length * 1000) / 10.0);
-            var pval1:Float = Math.round(distribution.getProbabilityForScore(fromX) * 1000) / 1000;
-            var pval2:Float = Math.round(distribution.getProbabilityForScore(to) * 1000) / 1000;
-            var cdfVal:Float = Math.round((distribution.getProbabilityForHigherScore(fromX) - distribution.getProbabilityForHigherScore(to)) * 1000) / 1000;
+            var pval1:Float = Math.round(distribution.getProbabilityForScore(fromX, alpha) * 1000) / 1000;
+            var pval2:Float = Math.round(distribution.getProbabilityForScore(to, alpha) * 1000) / 1000;
+            var cdfVal:Float = Math.round((distribution.getProbabilityForHigherScore(fromX, alpha) - distribution.getProbabilityForHigherScore(to, alpha)) * 1000) / 1000;
             var alertMsg:String = "From: " + fromX + "\\nTo: " + to + "\\nCount: " + v[i] + " (" + percentage + "%)\\nProbability from: " + pval1 + "-" + pval2 + "\\nCDF: " + cdfVal;
             result.add("<rect id='histBox" + i + "' from='" + fromX + "' to='" + to + "' x='" + x + "' y='" + y + "' width='20' height='" + h + "' onclick='alert(\"" + alertMsg + "\");' />");
         }
@@ -117,26 +119,26 @@ class ScoreListVisualizer
         var listOfPoints:List<{x:Float, y:Float, i:Float, d:Float}> = new List<{x:Float, y:Float, i:Float, d:Float}>();
         for (i in 0...28) {
             var val:Float = (i * hd + low);
-            var pval:Float = distribution.getProbabilityForScore(val);
-            var d:Float = distribution.getProbabilityForHigherScore(val);
+            var pval:Float = distribution.getProbabilityForScore(val, alpha);
+            var d:Float = distribution.getProbabilityForHigherScore(val, alpha);
             listOfPoints.add({x : val, y : pval, i : i, d : d});
             highestPVal = (highestPVal > pval) ? highestPVal : pval;
             
             val = (i * hd + low) * 3 / 4 + ((i + 1) * hd + low) / 4;
-            pval = distribution.getProbabilityForScore(val);
-            d = distribution.getProbabilityForHigherScore(val);
+            pval = distribution.getProbabilityForScore(val, alpha);
+            d = distribution.getProbabilityForHigherScore(val, alpha);
             highestPVal = (highestPVal > pval) ? highestPVal : pval;
             listOfPoints.add({x : val, y : pval, i : i + 0.25, d : d});
             
             val = ((i * hd + low) + ((i + 1) * hd + low)) / 2;
-            pval = distribution.getProbabilityForScore(val);
-            d = distribution.getProbabilityForHigherScore(val);
+            pval = distribution.getProbabilityForScore(val, alpha);
+            d = distribution.getProbabilityForHigherScore(val, alpha);
             highestPVal = (highestPVal > pval) ? highestPVal : pval;
             listOfPoints.add({x : val, y : pval, i : i + 0.5, d : d});
             
             val = (i * hd + low) / 4 + ((i + 1) * hd + low) * 3 / 4;
-            pval = distribution.getProbabilityForScore(val);
-            d = distribution.getProbabilityForHigherScore(val);
+            pval = distribution.getProbabilityForScore(val, alpha);
+            d = distribution.getProbabilityForHigherScore(val, alpha);
             highestPVal = (highestPVal > pval) ? highestPVal : pval;
             listOfPoints.add({x : val, y : pval, i : i + 0.75, d : d});
         }
