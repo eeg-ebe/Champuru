@@ -65,7 +65,11 @@
                         <p>Which score calculation method to use. Currently the following methods are implemented:</p>
                         <table class="descTable">
                             <tr class="even">
-                                <td valign="top">Overlap-corrected score</td><td valign="top">The score correction method described in the Champuru 1.0 paper.</td>
+                                <td valign="top">Overlap-corrected score</td><td valign="top">The score correction method described in the Champuru 1.0 paper
+(namely, computing the number of compatible positions
+in the alignment minus one fourth of the length of the overlap between the two sequences,
+to correct for the fact that two random nucleotides have a 0.25 probability of matching
+just by chance).</td>
                             </tr>
                             <tr class="odd">
                                 <td valign="top">Overlap and ambiguity-corrected score</td><td valign="top">A modification of the score calculation method described in the Champuru 1.0 paper.
